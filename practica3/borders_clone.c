@@ -18,7 +18,7 @@
 */
 #define DIF 16
 #define NUM_THREADS 4
-#define FIBER_STACK 1024*64v
+#define FIBER_STACK 1024*64
 
 char filename[]="/home/cury/ITESO/Operativos/practica3/img/rocks.bmp";
 
