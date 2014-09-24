@@ -6,7 +6,8 @@
 #define DIF 16
 
 // NOMBRE DEL ARCHIVO A PROCESAR
-char filename[]="/home/john/practica3/img/rocks";
+
+char filename[]="/home/cury/ITESO/Operativos/practica3/img/rocks.bmp";
 
 #pragma pack(2) // Empaquetado de 2 bytes
 typedef struct {

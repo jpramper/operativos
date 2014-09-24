@@ -15,7 +15,7 @@
 
 pthread_mutex_t lock;
 
-char filename[]="/home/cury/ITESO/Operativos/Practica 3/practica3/img/rocks.bmp";
+char filename[]="/home/cury/ITESO/Operativos/practica3/img/rocks.bmp";
 
 unsigned char blackandwhite(PIXEL p)
 {
@@ -27,6 +27,11 @@ void *threadProcessBMP(void *threadid);
 
 int main()
 {
+  // variables para manejo de tiempo
+  struct timeval start_ts;
+  struct timeval stop_ts;
+  struct timeval elapsed_time;
+  
   IMAGE imagefte;//Imagen fuente
   IMAGE imagedst;//Imagen destino
 
@@ -38,9 +43,8 @@ int main()
   printf("Source file: %s\n",filename);
   printf("Target file: %s\n",namedest);
 
-  //clock
-  clock_t t_inicial=clock();
-  clock_t t_final;
+  // obtener el tiempo inicial
+  gettimeofday(&start_ts, NULL);
 
   //load
   if(loadBMP(filename,&imagefte)==-1)
@@ -61,9 +65,14 @@ int main()
     exit(1);
   }
 
-  //clock result
-  t_final=clock();
-  printf("Tiempo %3.6f segundos\n",((float) t_final- (float)t_inicial)/1000000);
+  // obtener el tiempo final
+  gettimeofday(&stop_ts, NULL);
+
+  // calcular e imprimir tiempo
+  timersub(&stop_ts, &start_ts, &elapsed_time);
+
+  printf("------------------------------\n");
+  printf("TIEMPO TOTAL, %ld.%ld segundos\n",elapsed_time.tv_sec, elapsed_time.tv_usec);
 }
 
 ///////////////////////////////////////////////////

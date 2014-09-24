@@ -18,7 +18,7 @@
 */
 #define DIF 16
 #define NUM_THREADS 4
-#define FIBER_STACK 1024*64v
+#define FIBER_STACK 1024*64
 
 char filename[]="/home/cury/ITESO/Operativos/practica3/img/rocks.bmp";
 
@@ -174,6 +174,7 @@ void *threadProcessBMP(void *arg)
     PIXEL *v0,*v1,*v2,*v3,*v4,*v5,*v6,*v7;
 
     int i,j;
+    short p;
     for( i=tinfo->fromRow ; i<=tinfo->toRow ; i++)
       for(j=1;j< imageCols-1;j++)
         {
@@ -187,16 +188,18 @@ void *threadProcessBMP(void *arg)
           v6=pfte+imageCols;
           v7=pfte+imageCols+1;
 
+          p = blackandwhite(*pfte);
+
           pdst=imagedst->pixel+imageCols*i+j;
 
-          if(abs(blackandwhite(*pfte)-blackandwhite(*v0))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v1))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v2))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v3))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v4))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v5))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v6))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v7))>DIF)
+          if(abs(p-blackandwhite(*v0))>DIF ||
+          abs(p-blackandwhite(*v1))>DIF ||
+          abs(p-blackandwhite(*v2))>DIF ||
+          abs(p-blackandwhite(*v3))>DIF ||
+          abs(p-blackandwhite(*v4))>DIF ||
+          abs(p-blackandwhite(*v5))>DIF ||
+          abs(p-blackandwhite(*v6))>DIF ||
+          abs(p-blackandwhite(*v7))>DIF)
           {
             pdst->red=0;
             pdst->green=0;

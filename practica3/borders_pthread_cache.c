@@ -7,18 +7,13 @@
 #include <pthread.h>
 #include "lib/bmp_structs.h"
 #include "lib/bmp_file.h"
-#include <malloc.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <linux/sched.h>
-
 /**
 *@config DIF When a pixel P>=DIF, pixel is set to black.
 */
 #define DIF 16
-#define NUM_THREADS 4
-#define FIBER_STACK 1024*64v
+#define NUM_THREADS 32
+
+pthread_mutex_t lock;
 
 char filename[]="/home/cury/ITESO/Operativos/practica3/img/rocks.bmp";
 
@@ -108,10 +103,8 @@ void processBMP(IMAGE *imagefte, IMAGE *imagedst)
   int imageCols = imagefte->infoheader.cols;
   imagedst->pixel=(PIXEL *)malloc(sizeof(PIXEL)*imageRows*imageCols);
 
-  void* stack;
-  pid_t pid[NUM_THREADS];
+  pthread_t threads[NUM_THREADS];
   struct thread_info tinfo[NUM_THREADS];
-  int status;
   int i;
 
   for(i=0; i<NUM_THREADS; i++)
@@ -134,32 +127,21 @@ void processBMP(IMAGE *imagefte, IMAGE *imagedst)
     tinfo[i].imagedst = imagedst;
 
     /*
-    * Clones
+    * CREATES THE THREAD HERE
     */
-
-    // Allocate the stack
-    stack = malloc(FIBER_STACK);
-    if ( stack == 0 )
+    int status = pthread_create(&threads[i], NULL, &threadProcessBMP, &tinfo[i]);
+    if (status!=0)
     {
-        perror( "malloc: could not allocate stack" );
-        exit( 1 );
+      printf("ERROR CODE: %d\n", status);
+      exit(-1);
     }
-
-
-    //create the clone
-    pid[i] = clone( &threadProcessBMP, (char*) stack + FIBER_STACK, SIGCHLD | CLONE_FS | CLONE_FILES | CLONE_IO | CLONE_VM, &tinfo[i]);
-    if ( pid[i] == -1 )
-      {
-        exit( 2 );
-      }	
   }
-
+  //WAIT FOR THREADS
   for(i=0; i<NUM_THREADS; i++)
   {	
     while(tinfo[i].status){
     }
   }
-  free( stack );
 }
 
 void *threadProcessBMP(void *arg)
@@ -174,6 +156,7 @@ void *threadProcessBMP(void *arg)
     PIXEL *v0,*v1,*v2,*v3,*v4,*v5,*v6,*v7;
 
     int i,j;
+    short p;
     for( i=tinfo->fromRow ; i<=tinfo->toRow ; i++)
       for(j=1;j< imageCols-1;j++)
         {
@@ -187,16 +170,18 @@ void *threadProcessBMP(void *arg)
           v6=pfte+imageCols;
           v7=pfte+imageCols+1;
 
+          p = blackandwhite(*pfte);
+
           pdst=imagedst->pixel+imageCols*i+j;
 
-          if(abs(blackandwhite(*pfte)-blackandwhite(*v0))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v1))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v2))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v3))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v4))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v5))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v6))>DIF ||
-          abs(blackandwhite(*pfte)-blackandwhite(*v7))>DIF)
+          if(abs(p-blackandwhite(*v0))>DIF ||
+          abs(p-blackandwhite(*v1))>DIF ||
+          abs(p-blackandwhite(*v2))>DIF ||
+          abs(p-blackandwhite(*v3))>DIF ||
+          abs(p-blackandwhite(*v4))>DIF ||
+          abs(p-blackandwhite(*v5))>DIF ||
+          abs(p-blackandwhite(*v6))>DIF ||
+          abs(p-blackandwhite(*v7))>DIF)
           {
             pdst->red=0;
             pdst->green=0;
