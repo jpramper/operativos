@@ -1,0 +1,5 @@
+Archivo fuente /home/john/p3/img/rocks.bmp
+Archivo destino /home/john/p3/img/rocks_secuencial.bmp
+Procesando imagen de: Renglones = 3000, Columnas =4000
+------------------------------
+TIEMPO TOTAL, 7.762250 segundos

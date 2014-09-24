@@ -1,0 +1,16 @@
+Source file: /home/john/p3/img/rocks.bmp
+Target file: /home/john/p3/img/rocks_P.bmp
+
+Processing image: ROWS= 3000, COLUMNS= 4000
+
+Thread 0 working from 1 to 749 Row
+Thread 1 working from 750 to 1499 Row
+Thread 2 working from 1500 to 2249 Row
+Thread 3 working from 2250 to 2999 Row
+Thread 2 finished
+Thread 1 finished
+Thread 0 finished
+Thread 3 finished
+guardar
+------------------------------
+TIEMPO TOTAL, 4.995367 segundos

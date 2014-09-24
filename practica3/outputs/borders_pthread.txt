@@ -1,0 +1,72 @@
+Source file: /home/john/p3/img/rocks.bmp
+Target file: /home/john/p3/img/rocks_P.bmp
+
+Processing image: ROWS= 3000, COLUMNS= 4000
+
+Thread 0 working from 1 to 92 Row
+Thread 1 working from 93 to 185 Row
+Thread 31 working from 2883 to 2999 Row
+Thread 30 working from 2790 to 2882 Row
+Thread 29 working from 2697 to 2789 Row
+Thread 2 working from 186 to 278 Row
+Thread 3 working from 279 to 371 Row
+Thread 28 working from 2604 to 2696 Row
+Thread 4 working from 372 to 464 Row
+Thread 5 working from 465 to 557 Row
+Thread 6 working from 558 to 650 Row
+Thread 7 working from 651 to 743 Row
+Thread 27 working from 2511 to 2603 Row
+Thread 8 working from 744 to 836 Row
+Thread 9 working from 837 to 929 Row
+Thread 10 working from 930 to 1022 Row
+Thread 11 working from 1023 to 1115 Row
+Thread 12 working from 1116 to 1208 Row
+Thread 13 working from 1209 to 1301 Row
+Thread 14 working from 1302 to 1394 Row
+Thread 15 working from 1395 to 1487 Row
+Thread 16 working from 1488 to 1580 Row
+Thread 17 working from 1581 to 1673 Row
+Thread 18 working from 1674 to 1766 Row
+Thread 19 working from 1767 to 1859 Row
+Thread 20 working from 1860 to 1952 Row
+Thread 21 working from 1953 to 2045 Row
+Thread 22 working from 2046 to 2138 Row
+Thread 23 working from 2139 to 2231 Row
+Thread 24 working from 2232 to 2324 Row
+Thread 25 working from 2325 to 2417 Row
+Thread 26 working from 2418 to 2510 Row
+Thread 29 finished
+Thread 30 finished
+Thread 28 finished
+Thread 27 finished
+Thread 17 finished
+Thread 19 finished
+Thread 18 finished
+Thread 20 finished
+Thread 23 finished
+Thread 22 finished
+Thread 24 finished
+Thread 26 finished
+Thread 25 finished
+Thread 16 finished
+Thread 15 finished
+Thread 14 finished
+Thread 31 finished
+Thread 13 finished
+Thread 10 finished
+Thread 11 finished
+Thread 12 finished
+Thread 9 finished
+Thread 1 finished
+Thread 0 finished
+Thread 21 finished
+Thread 2 finished
+Thread 6 finished
+Thread 3 finished
+Thread 5 finished
+Thread 8 finished
+Thread 4 finished
+Thread 7 finished
+guardar
+------------------------------
+TIEMPO TOTAL, 4.266547 segundos
