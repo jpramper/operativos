@@ -1,12 +1,12 @@
-#define MAXPROC 3 
+#define MAXPROC 3
 
 #define NINGUNO -1
 
 #define NUEVO 0
-#define LISTO 1 
+#define LISTO 1
 #define EJECUCION 2
 #define BLOQUEADO 3
-#define TERMINADO 4 
+#define TERMINADO 4
 
 #define TIMER 0
 #define SOLICITA_E_S 1
@@ -19,7 +19,7 @@ struct PROCESO {
     int pid;
     int tinicio;
     int tcpu;
-    int tes;
+    int tes;        // IO time
     int trestante;
     int prioridad;
     int estado;

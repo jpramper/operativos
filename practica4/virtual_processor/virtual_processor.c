@@ -25,35 +25,19 @@ int cambia_proceso=1;
 FILE *fp;
 
 
-int main(int argc,char *argv[]) 
+int main()
 {
-    int res,p,pid,i,thrid,statval;
+    int p,i;
+    int pid,statval;
     char snumproc[5],soml[12],stcpu[5],stes[5];
-   
-    struct itimerval itimer, otimer;
+
+    struct itimerval itimer;
+    struct itimerval otimer;
     struct sigaction act;
 
-    if(argc>2)
-    {
-        fprintf(stderr,"Error en los argumentos\nUso: process [/version]\n");
-        exit(1);
-    }
-    if(argc==2)
-        if (strcmp(argv[1],"/version")==0)
-        {
-            printf(VERSION);
-            exit(0);
-        }
-        else
-        {
-            fprintf(stderr,"Error en los argumentos\nUso: process [/debug]\n");
-            exit(1);
-        }
-
- 
-    // Obtener los ciclos por tiempo 
-    sprintf(soml,"%d",(int) get_one_millisec_loop());   
-    printf("%s\n",soml); 
+    // Obtener los ciclos por tiempo
+    sprintf(soml,"%d",(int) get_one_millisec_loop());
+    printf("%s\n",soml);
 
     // Crear semáforo para asegurarse que solo 1 proceso pueda ejecutar handler
     // non_reentrant=semget((key_t)5234, 1, 0666 | IPC_CREAT);
@@ -82,21 +66,20 @@ int main(int argc,char *argv[])
          proceso[p].estado=NUEVO;
     }
 
-
     // Crear los procesos
     for(p=0;p<MAXPROC;p++)
     {
         proceso[p].pid=fork();
         if(proceso[p].pid==0)
         {
-            kill(getpid(),SIGSTOP);
+            kill(getpid(),SIGSTOP); //SIGSTOP:pause   SIGCONT:continue process
             sprintf(snumproc,"%d",p);
             sprintf(stcpu,"%d",proceso[p].tcpu);
             sprintf(stes,"%d",proceso[p].tes);
             execlp("./proceso","proceso",snumproc,soml,stcpu,stes,NULL);
         }
     }
-    
+
     printf("Proceso %d\n",getpid());
 
     // Establece el handler para manejar las señales
@@ -106,24 +89,24 @@ int main(int argc,char *argv[])
     sigaddset(&act.sa_mask,SIGUSR1);
     sigaddset(&act.sa_mask,SIGUSR2);
     act.sa_flags=SA_RESTART;
-    sigaction(SIGALRM,&act,0);
+    sigaction(SIGALRM,&act,0);//signal inicializa new process
 
     act.sa_handler=handler;
     sigaddset(&act.sa_mask,SIGALRM);
     sigaddset(&act.sa_mask,SIGUSR1);
     sigaddset(&act.sa_mask,SIGUSR2);
     act.sa_flags=SA_RESTART;
-    sigaction(SIGUSR1,&act,0);
+    sigaction(SIGUSR1,&act,0); //signal solicita entrada y salida
 
     act.sa_handler=handler;
     sigaddset(&act.sa_mask,SIGALRM);
     sigaddset(&act.sa_mask,SIGUSR1);
     sigaddset(&act.sa_mask,SIGUSR2);
     act.sa_flags=SA_RESTART;
-    sigaction(SIGUSR2,&act,0);
+    sigaction(SIGUSR2,&act,0); //signal termina entrada y salida
 
 
-    // Inicializa variabless
+    // Inicializa variables
     listos.ent=0;
     listos.sal=0;
     bloqueados.ent=0;
@@ -131,35 +114,33 @@ int main(int argc,char *argv[])
     proceso_en_ejecucion=NINGUNO;
 
     // Inicia el timer
-    itimer.it_interval.tv_sec=1;
-    itimer.it_interval.tv_usec=0;
+    itimer.it_interval.tv_sec=1;//quantum =1seg
+    itimer.it_interval.tv_usec=0;//quantum +=0micros
     itimer.it_value.tv_sec=1;
     itimer.it_value.tv_usec=0;
 
     if(setitimer(ITIMER_REAL,&itimer,&otimer)<0)
          perror("Error en el settimer");
-    
+
 
     // Aquí vamos a esperar a los procesos
-    //
-    //
     for(p=0;p<MAXPROC;p++)
     {
-        pid=wait(&statval);
-	for(i=0;i<MAXPROC;i++)
-	    if(proceso[i].pid==pid)
-            {
-                proceso_terminado=i;
-                handler(SIGCHLD);
-	    }
+      pid=wait(&statval);
+	    for(i=0;i<MAXPROC;i++)
+  	    if(proceso[i].pid==pid)    //checa que proceso fue el que termino
+        {
+           proceso_terminado=i;     //setea el proceso terminado
+           handler(SIGCHLD);        //manda señal para avisar que este ha terminado
+  	    }
     }
-    // del_semvalue(non_reentrant);   
+    // del_semvalue(non_reentrant);
     fclose(fp);
 
     exit(EXIT_SUCCESS);
 }
 
-	    
+
 void handler(int sen)
 {
     int evento,ejecuta;
@@ -169,7 +150,7 @@ void handler(int sen)
     if(sen==SIGALRM)
     {
         tiempo++;
-	printf("\n--------------------------\nInterrupcion del timer proceso\nTiempo=%d\n",tiempo);
+	      printf("\n--------------------------\nInterrupcion del timer proceso\nTiempo=%d\n",tiempo);
 
         for(pars[0]=0;pars[0]<MAXPROC;pars[0]++)
             if(proceso[pars[0]].tinicio==tiempo)
@@ -177,11 +158,12 @@ void handler(int sen)
                 evento=PROCESO_NUEVO;
                 printf("Proceso Nuevo %d\n",pars[0]);
                 if(proceso_en_ejecucion!=NINGUNO && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
-                    kill(proceso[proceso_en_ejecucion].pid,SIGSTOP); 
+                    kill(proceso[proceso_en_ejecucion].pid,SIGSTOP);
                 pars[1]=proceso_en_ejecucion;
                 ejecuta=scheduler(evento);
                 printf("<---PLANIFICADOR--->\n");
                 proceso_en_ejecucion=ejecuta;
+                //if(proceso_en_ejecucion==NINGUNO || proceso[proceso_en_ejecucion].estado==BLOQUEADO)
                 if(proceso_en_ejecucion!=NINGUNO && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
                 {
                     printf("Proceso en turno %d\n",ejecuta);
@@ -232,13 +214,13 @@ void handler(int sen)
     pars[1]=proceso_en_ejecucion;
     ejecuta=scheduler(evento); // Llama al scheduler
     printf("<---PLANIFICADOR--->\n");
-    proceso_en_ejecucion = ejecuta; 
+    proceso_en_ejecucion = ejecuta;
     if(ejecuta!=NINGUNO  && proceso[ejecuta].estado!=BLOQUEADO)
     {
         printf("Proceso en ejecucion %d\n",ejecuta);
         kill(proceso[ejecuta].pid,SIGCONT);
     }
-   
+
     return;
 }
 
@@ -251,19 +233,19 @@ long get_one_millisec_loop()
     long cicles;
     struct timeval ts;
     int i,j;
- 
- 
+
+
     gettimeofday(&ts, NULL);
     start_ts = ts.tv_sec * 1000000 + ts.tv_usec;
- 
- 
+
+
     for (i=0; i< 1000000 ; i++);
- 
+
     gettimeofday(&ts, NULL);
     stop_ts = ts.tv_sec * 1000000 + ts.tv_usec;
- 
+
     elapsed_time = (stop_ts - start_ts)/1000;
- 
+
     cicles=10000000/elapsed_time;
     return(cicles);
 }
@@ -289,13 +271,13 @@ int cola_vacia(struct COLAPROC q)
 int sacar_de_cola(struct COLAPROC *q)
 {
     int proceso;
-    
+
     proceso=q->cola[q->sal];
     q->sal++;
     if(q->sal>19)
         q->sal=0;
     return(proceso);
-} 
+}
 
 int num_en_tabla(int pid)
 {
