@@ -22,6 +22,7 @@ struct PROCESO {
     int tes;        // IO time
     int trestante;
     int prioridad;
+    int num_veces;
     int estado;
 };
 
@@ -30,6 +31,9 @@ struct COLAPROC {
     int ent;
     int sal;
 };
+
+//int nuestrosprocesos[20];
+//int limite = 0;
 
 void mete_a_cola(struct COLAPROC *q,int proceso);
 int cola_vacia(struct COLAPROC q);

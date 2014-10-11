@@ -150,39 +150,47 @@ void handler(int sen)
     if(sen==SIGALRM)
     {
         tiempo++;
-	      printf("\n--------------------------\nInterrupcion del timer proceso\nTiempo=%d\n",tiempo);
+	      //printf("\n--------------------------\nInterrupcion del timer proceso\nTiempo=%d\n",tiempo);
 
         for(pars[0]=0;pars[0]<MAXPROC;pars[0]++)
             if(proceso[pars[0]].tinicio==tiempo)
             {
                 evento=PROCESO_NUEVO;
-                printf("Proceso Nuevo %d\n",pars[0]);
+                printf("<Evento Type='NEW PROCESS' NewId='%d'>\n",pars[0]);
+                //printf("Proceso Nuevo %d\n",pars[0]);
                 if(proceso_en_ejecucion!=NINGUNO && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
                     kill(proceso[proceso_en_ejecucion].pid,SIGSTOP);
                 pars[1]=proceso_en_ejecucion;
                 ejecuta=scheduler(evento);
-                printf("<---PLANIFICADOR--->\n");
+                //printf("<---PLANIFICADOR--->\n");
                 proceso_en_ejecucion=ejecuta;
                 //if(proceso_en_ejecucion==NINGUNO || proceso[proceso_en_ejecucion].estado==BLOQUEADO)
                 if(proceso_en_ejecucion!=NINGUNO && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
                 {
-                    printf("Proceso en turno %d\n",ejecuta);
+                    printf("    <Ejecuta Id='%d'>\n",ejecuta);
+                    //printf("Proceso en turno %d\n",ejecuta);
                     kill(proceso[proceso_en_ejecucion].pid,SIGCONT);
                 }
+                printf("</Evento>\n\n");
             }
+        printf("<Evento Tipo='TIMER' Tiempo='%d'",tiempo);
 
-            if(proceso_en_ejecucion!=NINGUNO  && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
-            {
-                printf("Llegada del timer, se supende proceso %d\n",proceso_en_ejecucion);
-                kill(proceso[proceso_en_ejecucion].pid,SIGSTOP);
-            }
-            pars[0]=proceso_en_ejecucion;
-            evento=TIMER;
+        if(proceso_en_ejecucion!=NINGUNO  && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
+        {
+            printf(" Detiene='%d'>\n", proceso_en_ejecucion);
+            //printf("Llegada del timer, se supende proceso %d\n",proceso_en_ejecucion);
+            kill(proceso[proceso_en_ejecucion].pid,SIGSTOP);
+        }
+        else
+            printf(">\n");
+        pars[0]=proceso_en_ejecucion;
+        evento=TIMER;
     }
 
     if(sen==SIGUSR1)
     {
-        printf("\n--------------------------\nProceso %d solicita E/S\n",proceso_en_ejecucion);
+        printf("<Evento Tipe='START E/S' Proceso='%d'>\n",proceso_en_ejecucion);
+        //printf("\n--------------------------\nProceso %d solicita E/S\n",proceso_en_ejecucion);
         evento=SOLICITA_E_S;
         pars[0]=proceso_en_ejecucion;
     }
@@ -194,18 +202,23 @@ void handler(int sen)
         fgets(line_buffer,4,fp);
         pars[0]=atoi(line_buffer);
 
-        printf("\n--------------------------\nTerminación de entrada y salida del proceso %d\n",pars[0]);
+        printf("<Evento Tipe='END E/S' Proceso='%d'", pars[0]);
+        //printf("\n--------------------------\nTerminación de entrada y salida del proceso %d\n",pars[0]);
         if(proceso_en_ejecucion!=NINGUNO && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
         {
-            printf("Se suspende el proceso %d\n",proceso_en_ejecucion);
+            printf(" Detiene='%d'>\n", proceso_en_ejecucion);
+            //printf("Se suspende el proceso %d\n",proceso_en_ejecucion);
             kill(proceso[proceso_en_ejecucion].pid,SIGSTOP);
         }
+        else
+            printf(">\n");
 
     }
 
     if(sen==SIGCHLD)
     {
-        printf("\n--------------------------\nTermina ejecución del proceso %d\n",proceso_terminado);
+        printf("<Evento Tipe='TERMINA' Proceso='%d'>\n",proceso_terminado);
+        //printf("\n--------------------------\nTermina ejecución del proceso %d\n",proceso_terminado);
         evento=PROCESO_TERMINADO;
         proceso_en_ejecucion=NINGUNO;
         pars[0]=proceso_terminado;
@@ -213,13 +226,16 @@ void handler(int sen)
     }
     pars[1]=proceso_en_ejecucion;
     ejecuta=scheduler(evento); // Llama al scheduler
-    printf("<---PLANIFICADOR--->\n");
+    //printf("<---PLANIFICADOR--->\n");
     proceso_en_ejecucion = ejecuta;
     if(ejecuta!=NINGUNO  && proceso[ejecuta].estado!=BLOQUEADO)
     {
-        printf("Proceso en ejecucion %d\n",ejecuta);
+        printf("    <Ejecutado Id='%d'>\n",ejecuta);
+        //printf("Proceso en ejecucion %d\n",ejecuta);
         kill(proceso[ejecuta].pid,SIGCONT);
     }
+
+    printf("</Evento>\n\n");
 
     return;
 }
@@ -254,6 +270,9 @@ long get_one_millisec_loop()
 
 void mete_a_cola(struct COLAPROC *q,int proceso)
 {
+    if(proceso == -1 )
+      return;
+
     q->cola[q->ent]=proceso;
     q->ent++;
     if(q->ent>19)

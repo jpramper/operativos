@@ -8,6 +8,9 @@ extern struct COLAPROC listos,bloqueados;
 extern int tiempo;
 extern int pars[];
 
+void push(int nuevo_id);
+int pop();
+
 #define TRUE 1
 #define FALSE 0
 
@@ -26,6 +29,8 @@ int scheduler(int evento)
       case 0:
         printf("        EVENTO: TIMER, ejecucion actual: %d\n",pars[0]);
 
+
+
         if(cola_vacia(listos))
           printf("        - Cola vacia\n");
         else
@@ -33,7 +38,7 @@ int scheduler(int evento)
             printf("        - Cola no vacia\n");
             // lo que estaba en ejecucion se mete a listos
             proceso[pars[1]].estado = LISTO;
-            mete_a_cola(&listos,pars[1]);
+            push(pars[1]);
             // y se hace pop
             cambia_proceso = TRUE;
         }
@@ -57,7 +62,7 @@ int scheduler(int evento)
 
         // se desbloquea el proceso y se mete a la cola
         proceso[pars[0]].estado = LISTO;
-        mete_a_cola(&listos,sacar_de_cola(&bloqueados));
+        push(sacar_de_cola(&bloqueados));
 
         break;
 
@@ -66,7 +71,7 @@ int scheduler(int evento)
         printf("        EVENTO: PROCESO_NUEVO, ejecucion actual: %d\n",pars[0]);
         //if(!pars[1]== -1){
           proceso[pars[0]].estado = LISTO;// Agregar el nuevo proceso a la cola de listos
-          mete_a_cola(&listos,pars[0]);
+          push(pars[0]);
           if(tiempo==0)
             cambia_proceso = TRUE;
         //}
@@ -92,7 +97,7 @@ int scheduler(int evento)
         // Si la cola no esta vacia obtener de la cola el siguiente proceso listo
         if(!cola_vacia(listos))
         {
-            prox_proceso_a_ejecutar=sacar_de_cola(&listos);
+            prox_proceso_a_ejecutar=pop();
             proceso[prox_proceso_a_ejecutar].estado=EJECUCION;
             cambia_proceso=0;
         }
@@ -108,4 +113,92 @@ int scheduler(int evento)
     return(prox_proceso_a_ejecutar);
 }
 
+/*
+int push(int proceso)
+{
+  //aumenta prioridad y asi
+  if(!cola_vacia(listos) && proceso[proceso].prioridad < MAXPROC)
+  {
+    proceso[proceso].num_veces++;
+  }
+
+  mete_a_cola(listos,proceso);
+}
+
+int pop()
+{
+  int i = 0;
+  int min = 20;
+  int indicemin = -1;
+
+  for (i = 0; i < limite; i++) {
+    if (proceso[nuestrosprocesos[i]].prioridad < min){
+      indicemin = i;
+      min = proceso[nuestrosprocesos[i]].prioridad;
+    }
+  }
+
+  return nuestrosprocesos[indicemin];
+
+  /*
+  int proceso;
+
+  q=&listos
+
+  proceso=q->cola[q->sal];
+  q->sal++;
+  if(q->sal>19)
+      q->sal=0;
+  return(proceso);
+
+
+}*/
+
 // =================================================================
+
+void push(int nuevo_id)
+{
+  struct PROCESO nuevo= proceso[nuevo_id];//realmente donde se consigue?
+
+  if(listos.sal>0 && nuevo.prioridad < MAXPROC)
+    nuevo.prioridad++;
+
+  listos.cola[listos.sal]= nuevo_id;
+  listos.sal ++;
+
+  printf("push \n");
+  int i;
+  for(i=0;i<listos.sal;i++)
+    printf("cola: %d \n",listos.cola[i]);
+}
+
+int pop()
+{
+  int menor=0;
+  struct PROCESO answer= proceso[listos.cola[menor]];
+  int i=0;
+
+  for(i=0;i<listos.sal;i++)
+  {
+    struct PROCESO temp= proceso[listos.cola[i]];
+    if(temp.prioridad < answer.prioridad)
+      {
+        menor=i;
+        answer= proceso[listos.cola[menor]];
+      }
+  }
+
+  //recorre
+  for(i=menor;i<(listos.sal-1);i++)
+    listos.cola[i]=listos.cola[i+1];
+
+  listos.sal--;
+
+
+  printf("pop \n");
+  for(i=0;i<listos.sal;i++)
+    printf("cola: %d \n",listos.cola[i]);
+
+  return listos.cola[menor];
+
+}
