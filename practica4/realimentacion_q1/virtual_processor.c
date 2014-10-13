@@ -174,6 +174,7 @@ void handler(int sen)
                 }
                 printf("</Evento>\n\n");
             }
+        printf("--------------------------------\n");
         printf("<Evento Tipo='TIMER' Tiempo='%d'",tiempo);
 
         if(proceso_en_ejecucion!=NINGUNO  && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)

@@ -70,8 +70,10 @@ int scheduler(int evento)
       case 3:
         printf("        EVENTO: PROCESO_NUEVO, ejecucion actual: %d\n",pars[0]);
         //if(!pars[1]== -1){
-          proceso[pars[0]].estado = LISTO;// Agregar el nuevo proceso a la cola de listos
+          int p= proceso[pars[0]].prioridad;
           push(pars[0]);
+          proceso[pars[0]].estado = LISTO;// Agregar el nuevo proceso a la cola de listos
+          proceso[pars[0]].prioridad = p;// Asegura que la prioridad no haya cambiado en el push
           if(tiempo==0)
             cambia_proceso = TRUE;
         //}
@@ -113,92 +115,41 @@ int scheduler(int evento)
     return(prox_proceso_a_ejecutar);
 }
 
-/*
-int push(int proceso)
-{
-  //aumenta prioridad y asi
-  if(!cola_vacia(listos) && proceso[proceso].prioridad < MAXPROC)
-  {
-    proceso[proceso].num_veces++;
-  }
-
-  mete_a_cola(listos,proceso);
-}
-
-int pop()
-{
-  int i = 0;
-  int min = 20;
-  int indicemin = -1;
-
-  for (i = 0; i < limite; i++) {
-    if (proceso[nuestrosprocesos[i]].prioridad < min){
-      indicemin = i;
-      min = proceso[nuestrosprocesos[i]].prioridad;
-    }
-  }
-
-  return nuestrosprocesos[indicemin];
-
-  /*
-  int proceso;
-
-  q=&listos
-
-  proceso=q->cola[q->sal];
-  q->sal++;
-  if(q->sal>19)
-      q->sal=0;
-  return(proceso);
-
-
-}*/
-
-// =================================================================
-
 void push(int nuevo_id)
 {
-  struct PROCESO nuevo= proceso[nuevo_id];//realmente donde se consigue?
-
-  if(listos.sal>0 && nuevo.prioridad < MAXPROC)
-    nuevo.prioridad++;
+  if(listos.sal>0 && proceso[nuevo_id].prioridad < MAXPROC)
+    proceso[nuevo_id].prioridad++;
 
   listos.cola[listos.sal]= nuevo_id;
   listos.sal ++;
-
-  printf("push \n");
-  int i;
-  for(i=0;i<listos.sal;i++)
-    printf("cola: %d \n",listos.cola[i]);
 }
 
 int pop()
 {
-  int menor=0;
-  struct PROCESO answer= proceso[listos.cola[menor]];
-  int i=0;
+  int             menor_i  = 0;
+  int             answer   = NINGUNO;
+  struct PROCESO  menor_proceso = proceso[listos.cola[menor_i]];
 
+  int i;
   for(i=0;i<listos.sal;i++)
   {
     struct PROCESO temp= proceso[listos.cola[i]];
-    if(temp.prioridad < answer.prioridad)
+    if(temp.prioridad < menor_proceso.prioridad)
       {
-        menor=i;
-        answer= proceso[listos.cola[menor]];
+        menor_i=i;
+        menor_proceso= proceso[listos.cola[menor_i]];
       }
   }
 
+  //guarda resultado
+  answer=listos.cola[menor_i];
+
   //recorre
-  for(i=menor;i<(listos.sal-1);i++)
+  for(i=menor_i;i<(listos.sal-1);i++)
     listos.cola[i]=listos.cola[i+1];
 
   listos.sal--;
 
-
-  printf("pop \n");
-  for(i=0;i<listos.sal;i++)
-    printf("cola: %d \n",listos.cola[i]);
-
-  return listos.cola[menor];
+  return answer;
 
 }

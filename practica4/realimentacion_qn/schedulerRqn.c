@@ -8,6 +8,9 @@ extern struct COLAPROC listos,bloqueados;
 extern int tiempo;
 extern int pars[];
 
+void push(int nuevo_id);
+int pop();
+
 #define TRUE 1
 #define FALSE 0
 
@@ -26,6 +29,8 @@ int scheduler(int evento)
       case 0:
         printf("        EVENTO: TIMER, ejecucion actual: %d\n",pars[0]);
 
+
+
         if(cola_vacia(listos))
           printf("        - Cola vacia\n");
         else
@@ -33,7 +38,7 @@ int scheduler(int evento)
             printf("        - Cola no vacia\n");
             // lo que estaba en ejecucion se mete a listos
             proceso[pars[1]].estado = LISTO;
-            mete_a_cola(&listos,pars[1]);
+            push(pars[1]);
             // y se hace pop
             cambia_proceso = TRUE;
         }
@@ -57,7 +62,7 @@ int scheduler(int evento)
 
         // se desbloquea el proceso y se mete a la cola
         proceso[pars[0]].estado = LISTO;
-        mete_a_cola(&listos,sacar_de_cola(&bloqueados));
+        push(sacar_de_cola(&bloqueados));
 
         break;
 
@@ -65,8 +70,10 @@ int scheduler(int evento)
       case 3:
         printf("        EVENTO: PROCESO_NUEVO, ejecucion actual: %d\n",pars[0]);
         //if(!pars[1]== -1){
+          int p= proceso[pars[0]].prioridad;
+          push(pars[0]);
           proceso[pars[0]].estado = LISTO;// Agregar el nuevo proceso a la cola de listos
-          mete_a_cola(&listos,pars[0]);
+          proceso[pars[0]].prioridad = p;// Asegura que la prioridad no haya cambiado en el push
           if(tiempo==0)
             cambia_proceso = TRUE;
         //}
@@ -92,7 +99,7 @@ int scheduler(int evento)
         // Si la cola no esta vacia obtener de la cola el siguiente proceso listo
         if(!cola_vacia(listos))
         {
-            prox_proceso_a_ejecutar=sacar_de_cola(&listos);
+            prox_proceso_a_ejecutar=pop();
             proceso[prox_proceso_a_ejecutar].estado=EJECUCION;
             cambia_proceso=0;
         }
@@ -108,4 +115,41 @@ int scheduler(int evento)
     return(prox_proceso_a_ejecutar);
 }
 
-// =================================================================
+void push(int nuevo_id)
+{
+  if(listos.sal>0 && proceso[nuevo_id].prioridad < MAXPROC)
+    proceso[nuevo_id].prioridad++;
+
+  listos.cola[listos.sal]= nuevo_id;
+  listos.sal ++;
+}
+
+int pop()
+{
+  int             menor_i  = 0;
+  int             answer   = NINGUNO;
+  struct PROCESO  menor_proceso = proceso[listos.cola[menor_i]];
+
+  int i;
+  for(i=0;i<listos.sal;i++)
+  {
+    struct PROCESO temp= proceso[listos.cola[i]];
+    if(temp.prioridad < menor_proceso.prioridad)
+      {
+        menor_i=i;
+        menor_proceso= proceso[listos.cola[menor_i]];
+      }
+  }
+
+  //guarda resultado
+  answer=listos.cola[menor_i];
+
+  //recorre
+  for(i=menor_i;i<(listos.sal-1);i++)
+    listos.cola[i]=listos.cola[i+1];
+
+  listos.sal--;
+
+  return answer;
+
+}

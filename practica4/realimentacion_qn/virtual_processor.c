@@ -64,6 +64,7 @@ int main()
          tiempo_total+=proceso[p].tcpu;
          proceso[p].trestante=proceso[p].tcpu;
          proceso[p].estado=NUEVO;
+         proceso[p].num_veces = 0; // inicializa el contador
     }
 
     // Crear los procesos
@@ -173,6 +174,7 @@ void handler(int sen)
                 }
                 printf("</Evento>\n\n");
             }
+        printf("--------------------------------\n");
         printf("<Evento Tipo='TIMER' Tiempo='%d'",tiempo);
 
         if(proceso_en_ejecucion!=NINGUNO  && proceso[proceso_en_ejecucion].estado!=BLOQUEADO)
