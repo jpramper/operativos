@@ -1,7 +1,7 @@
 all: fcfs proceso 
 
 fcfs: virtual_processor.o schedulerRqn.c
-	gcc -o rqn schedulerRqn.c virtual_processor.o 
+	gcc -o rqn schedulerRqn.c virtual_processor.o -lm
 
 proceso: proceso.c
 	gcc -o proceso proceso.c

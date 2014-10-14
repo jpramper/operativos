@@ -22,7 +22,7 @@ int scheduler(int evento)
 {
     printf("    <Scheduler>\n");
     int cambia_proceso = FALSE; // bandera de cambio de proceso
-    int prox_proceso_a_ejecutar = pars[1]; // pid del proximo proceso a ejecutar
+    int prox_proceso_a_ejecutar = pars[1]; // pid del proceso en ejecucion
 
     switch(evento)
     {
@@ -39,7 +39,8 @@ int scheduler(int evento)
             // lo que estaba en ejecucion se mete a listos
             proceso[pars[1]].estado = LISTO;
             push(pars[1]);
-            // y se hace pop
+            // y se hace push
+
             cambia_proceso = TRUE;
         }
 
@@ -49,7 +50,7 @@ int scheduler(int evento)
       case 1:
         printf("        EVENTO: SOLICITA_E_S, ejecucion actual: %d\n",pars[0]);
 
-        // se mete a la cola de bloqueados y se hace pop
+        // se mete a la cola de bloqueados y se mete a cola de bloqueados
         proceso[pars[1]].estado = BLOQUEADO;
         mete_a_cola(&bloqueados,pars[1]);
         cambia_proceso = TRUE;
@@ -60,7 +61,7 @@ int scheduler(int evento)
       case 2:
         printf("        EVENTO: TERMINA_E_S, ejecucion actual: %d\n",pars[0]);
 
-        // se desbloquea el proceso y se mete a la cola
+        // se desbloquea el proceso y se saca de la cola de bloqueados
         proceso[pars[0]].estado = LISTO;
         push(sacar_de_cola(&bloqueados));
 
@@ -117,39 +118,42 @@ int scheduler(int evento)
 
 void push(int nuevo_id)
 {
+  /*si hay algo atras de "el" */
+  /*y su prioridad es menor a el limite (n procesos) */
   if(listos.sal>0 && proceso[nuevo_id].prioridad < MAXPROC)
-    proceso[nuevo_id].prioridad++;
+    proceso[nuevo_id].prioridad++; /* se incrementa la prioridad*/
 
-  listos.cola[listos.sal]= nuevo_id;
-  listos.sal ++;
+
+  listos.cola[listos.sal]= nuevo_id;  /*metes el proceso a la ultima posicion de la cola*/
+  listos.sal ++; /*incrementas el apuntador de la cola*/
 }
 
 int pop()
 {
-  int             menor_i  = 0;
-  int             answer   = NINGUNO;
-  struct PROCESO  menor_proceso = proceso[listos.cola[menor_i]];
-
+  int             menor_i  = 0; /*indice del menor en la cola*/
+  int             answer   = NINGUNO; /*ID proceso a buscar con menor prioridad*/
+  struct PROCESO  menor_proceso = proceso[listos.cola[menor_i]];/* objeto proceso */
+  /*iniciamos apuntando al primero*/
   int i;
   for(i=0;i<listos.sal;i++)
   {
-    struct PROCESO temp= proceso[listos.cola[i]];
+    struct PROCESO temp= proceso[listos.cola[i]]; /*temporal para hacer comparaciones*/
     if(temp.prioridad < menor_proceso.prioridad)
       {
         menor_i=i;
         menor_proceso= proceso[listos.cola[menor_i]];
       }
   }
+  /*despues del FOR regresa el primer objeto con menor prioridad*/
 
   //guarda resultado
   answer=listos.cola[menor_i];
 
   //recorre
-  for(i=menor_i;i<(listos.sal-1);i++)
+  for(i=menor_i;i<(listos.sal-1);i++)/*reconcatena las 2 listas*/
     listos.cola[i]=listos.cola[i+1];
 
-  listos.sal--;
+  listos.sal--; /*disminuimos tama;o de lista*/
 
   return answer;
-
 }

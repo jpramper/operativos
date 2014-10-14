@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <math.h>
 #include "virtual_processor.h"
 
 extern struct PROCESO proceso[];
@@ -22,25 +23,35 @@ int scheduler(int evento)
 {
     printf("    <Scheduler>\n");
     int cambia_proceso = FALSE; // bandera de cambio de proceso
-    int prox_proceso_a_ejecutar = pars[1]; // pid del proximo proceso a ejecutar
+    int prox_proceso_a_ejecutar = pars[1]; // pid del proceso en ejecucion
 
     switch(evento)
     {
       case 0:
         printf("        EVENTO: TIMER, ejecucion actual: %d\n",pars[0]);
+        if(pars[1] == NINGUNO){
+          cambia_proceso = TRUE;
+          break;
+        }
 
-
-
-        if(cola_vacia(listos))
-          printf("        - Cola vacia\n");
+        if(++proceso[pars[1]].num_veces >= pow(2.0, (proceso[pars[1]].prioridad)) &&
+          !(cola_vacia(listos)))
+        {
+          printf("        - Cola no vacia\n");
+          printf("        - Se llego a 2n (cambio de proceso)\n");
+          // lo que estaba en ejecucion se mete a listos
+          proceso[pars[1]].estado = LISTO;
+          push(pars[1]);
+          // y se hace push
+          cambia_proceso = TRUE;
+          proceso[pars[1]].num_veces = 0;
+        }
         else
         {
-            printf("        - Cola no vacia\n");
-            // lo que estaba en ejecucion se mete a listos
-            proceso[pars[1]].estado = LISTO;
-            push(pars[1]);
-            // y se hace pop
-            cambia_proceso = TRUE;
+          printf("        - Mi prioridad es: %d \n", proceso[pars[1]].prioridad);
+          printf("        - Me he ejecutado: %d veces\n", proceso[pars[1]].num_veces);
+          //proceso[pars[1]].num_veces++; /* Aumentamos la cantidad de veces que se ha ejecutado*/
+          cambia_proceso = FALSE;   /*NO CAMBIAR DE PROCESO*/
         }
 
         break;
@@ -49,7 +60,7 @@ int scheduler(int evento)
       case 1:
         printf("        EVENTO: SOLICITA_E_S, ejecucion actual: %d\n",pars[0]);
 
-        // se mete a la cola de bloqueados y se hace pop
+        // se mete a la cola de bloqueados y se hace push
         proceso[pars[1]].estado = BLOQUEADO;
         mete_a_cola(&bloqueados,pars[1]);
         cambia_proceso = TRUE;
