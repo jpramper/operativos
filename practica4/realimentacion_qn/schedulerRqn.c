@@ -128,7 +128,7 @@ int scheduler(int evento)
 
 void push(int nuevo_id)
 {
-  if(listos.sal>0 && proceso[nuevo_id].prioridad < MAXPROC)
+  if(listos.sal>0 && proceso[nuevo_id].prioridad < PRIORIDADES)
     proceso[nuevo_id].prioridad++;
 
   listos.cola[listos.sal]= nuevo_id;

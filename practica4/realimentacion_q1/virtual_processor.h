@@ -15,6 +15,8 @@
 
 #define PROCESO_TERMINADO 4
 
+#define PRIORIDADES 5
+
 struct PROCESO {
     int pid;
     int tinicio;

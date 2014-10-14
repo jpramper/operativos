@@ -120,7 +120,7 @@ void push(int nuevo_id)
 {
   /*si hay algo atras de "el" */
   /*y su prioridad es menor a el limite (n procesos) */
-  if(listos.sal>0 && proceso[nuevo_id].prioridad < MAXPROC)
+  if(listos.sal>0 && proceso[nuevo_id].prioridad < PRIORIDADES)
     proceso[nuevo_id].prioridad++; /* se incrementa la prioridad*/
 
 
