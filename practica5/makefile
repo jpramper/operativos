@@ -1,2 +1,3 @@
 all:
-	gcc ejemplo_hilos/narcos.c -o narcos_hilos -lpthread
+	gcc xchg/xchg.c -o _xchg -lpthread
+	gcc shm/shm.c -o _shm
