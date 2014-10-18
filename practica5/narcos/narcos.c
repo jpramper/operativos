@@ -83,9 +83,9 @@ int main()
   }
 
 	// inciializa el semaforo y los xchnges
-	*gwait = 0;
-	*gsig = 0;
   initsem(sem, WAYS);
+  *gwait = 0;
+  *gsig = 0;
 	printf("iniciamos nuestro semanforo, gwait=%d, gsig=%d\n", *gwait, *gsig);
 	fflush(stdout);
   srand(getpid()); // random seed con el pid del padre
