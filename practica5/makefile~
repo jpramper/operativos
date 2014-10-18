@@ -1,4 +1,0 @@
-all:
-	gcc xchg/xchg.c -o xchg -lpthread
-	gcc shm/shm.c -o shm
-
