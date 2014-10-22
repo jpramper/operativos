@@ -21,7 +21,7 @@ void proceso(int i, int pid)
   for(k=0;k<CICLOS;k++)
   {
     lwait=1;
-		printf("omaiga %s, g=%d, l=%d\n", pais[i], *gwait, lwait);
+		//printf("omaiga %s, g=%d, l=%d\n", pais[i], *gwait, lwait);
 		fflush(stdout);
     do { atomic_xchg(lwait,*gwait); } while(lwait!=0);
 		// comprobacion del semaforo
@@ -59,8 +59,8 @@ int main()
 	fflush(stdout);
   // definir la memoria compartida
   shmid=shmget(0x1234,sizeof(sem),0666|IPC_CREAT);
-	shmidgwait=shmget(0x1234,sizeof(gwait),0666|IPC_CREAT);
-	shmidgsig=shmget(0x1234,sizeof(gsig),0666|IPC_CREAT);
+	shmidgwait=shmget(0x1250,sizeof(gwait),0666|IPC_CREAT);
+	shmidgsig=shmget(0x1275,sizeof(gsig),0666|IPC_CREAT);
 
 	printf("pase el shmget \n");
 	fflush(stdout);
