@@ -11,15 +11,19 @@
 #define CICLOS 10
 
 char *pais[3]={"Peru","Bolvia","Colombia"};
-int *g;
+
+// nuestra estructura de mensaje:
+// no importa el contenido, 
+// sino que haya (o no) un mensaje en la bandeja
+struct msgbuf {
+    long mtype;
+    int mensaje;
+};
 
 int msqid; // id del buzon creado
-struct msqid_ds buf;
+struct msgbuf buf; // nuestro buffer de mensaje
+key_t key = 0x1234; // llave del buzón de mensajes
 
-struct msgbuf {
-	long mtype;
-	char mtext[8192];
-} rcvBuf, sndBuf, *message;
 
 void proceso(int i)
 {
@@ -28,8 +32,9 @@ void proceso(int i)
 
 	for(k=0; k<CICLOS; k++)
 	{
-		// mensaje
-
+		// recibe mensaje hasta que haya uno disponible 
+		// (rcv es bloqueante)
+  	msgrcv(msqid, &buf, sizeof(int), 1, 0);
 
 		// Entrada a la sección crítica
 		printf("Entra %s",pais[i]);
@@ -38,6 +43,8 @@ void proceso(int i)
 		printf("- %s Sale\n",pais[i]);
 		// Salida de la sección crítica
 
+		// al terminar, envía un mensaje para que otro pueda pasar
+		msgsnd(msqid, &buf, sizeof(int), 0);
 
 		// Espera aleatoria fuera de la sección crítica
 		sleep(rand()%3);
@@ -56,39 +63,22 @@ int main()
 	srand(getpid());
 
 	// creamos el buzón de mensajes
-	if ((msqid = msgget(0x1234, 0666|IPC_CREAT)) == -1)
-	{
-		perror("msgget: msgget failed");
-		exit(1);
-	}
+	if ((msqid = msgget(key, 0666 | IPC_CREAT)) == -1) {
+      printf("fallo crear buzon");
+      exit(1);
+  }
 
-	if( msgctl( msqid, IPC_STAT, &buf) == -1)
-  {
-		perror("msgget: IPC_STAT failed");
-		exit(2);
-	} 
+  // establecemos el tipo de mensaje como 1
+  // el recieve debe tener el mismo tipo que este
+  buf.mtype = 1;
 
-	// apuntamos a el mensaje a enviar
-	message = &sndBuf;
-	// ponemos el primer mensaje en el buzon
-	message->mtype = 1;
-	if (msgsnd(msqid, (const void*) message, 0, 0) == -1)
-		printf("omg");
+  // establecemos el valor del mensaje
+  // es trivial, en realidad no importa
+  buf.mensaje = 0;
 
-	message = &rcvBuf;
-
-	msgrcv(msqid, (void*) message, 0, 0, 0);
-		printf("rcv1");
-
-	msgrcv(msqid, (void*) message, 0, 0, 0);
-		printf("rcv2");
-
-	msgrcv(msqid, (void*) message, 0, 0, 0);
-		printf("rcv3");
-
-	//comprobación de estructura
-	puts("ola");
-	printf("\n%d\n", buf.msg_qnum);
+  // enviamos el primer mensaje
+  if (msgsnd(msqid, &buf, sizeof(int), 0) == -1)
+  	printf("fallo envio inicial");
 
 	for(i=0;i<3;i++)
 	{
@@ -102,6 +92,8 @@ int main()
 		pid = wait(&status);
 
 	// cerramos el buzón
-	if (msgctl(msqid, IPC_RMID, &buf) == -1)
-		perror("msgctl: msgctl failed");
+	if (msgctl(msqid, IPC_RMID, NULL) == -1) {
+      printf("fallo cierre buzon");
+      exit(1);
+  }
 }
