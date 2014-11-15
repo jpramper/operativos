@@ -5,9 +5,6 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
-// http://uw714doc.sco.com/en/SDK_sysprog/_Example_Program3.html
-// http://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/msg.h.html
-
 #define CICLOS 10
 
 char *pais[3]={"Peru","Bolvia","Colombia"};
@@ -16,8 +13,8 @@ char *pais[3]={"Peru","Bolvia","Colombia"};
 // no importa el contenido, 
 // sino que haya (o no) un mensaje en la bandeja
 struct msgbuf {
-    long mtype;
-    int mensaje;
+  long mtype;
+  int mensaje;
 };
 
 int msqid; // id del buzon creado
