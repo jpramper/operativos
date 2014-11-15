@@ -9,5 +9,8 @@ pagefault.o: pagefault.c mmu.h
 mmu.o: mmu.c semaphores.h mmu.h
 	cc -c mmu.c
 
-swap:
+swap: createswap
 	./createswap
+
+createswap:
+	cc -o createswap createswap.c
