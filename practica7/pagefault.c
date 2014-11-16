@@ -6,11 +6,11 @@
 extern char *base;
 extern int framesbegin;
 extern int idproc;
-extern int systemframetablesize;
-extern int processpagetablesize;
+extern int nframes;
+extern int pagesperproc;
 
-extern struct SYSTEMFRAMETABLE *systemframetable;
-extern struct PROCESSPAGETABLE processpagetable[];
+extern struct FRAMETABLE *frametable;
+extern struct PAGETABLE pagetable[];
 
 int getfreeframe();
 int getOldestUsed();
@@ -37,7 +37,7 @@ int pagefault(char *vaddress)
 
     // Cuenta los marcos asignados al proceso
     marcosAsignados = countframesassigned();
-  
+
     // Busca el indice de un marco libre en el sistema
     //if(marcosAsignados < 2)
         marcoNuevo = getfreeframe();
@@ -54,28 +54,28 @@ int pagefault(char *vaddress)
         paginaVieja = getOldestUsed();
 
         // escribimos la pagina vieja en memoria, si fue modificada
-        if (processpagetable[paginaVieja].modificado)
+        if (pagetable[paginaVieja].modificado)
         {
             swapFile = fopen("swap","wb");
             // busca la posicion de la página vieja en swap
-            fseek(swapFile, processpagetable[paginaVieja].framenumber * PAGESIZE,0);
+            fseek(swapFile, pagetable[paginaVieja].framenumber * PAGESIZE,0);
             // escribe el valor actual en swap
-            fwrite(systemframetable[processpagetable[paginaVieja].framenumber].paddress,1,PAGESIZE,swapFile);
+            fwrite(frametable[pagetable[paginaVieja].framenumber].paddress,1,PAGESIZE,swapFile);
 
             fclose(swapFile);
         }
 
         // si la pagina es nueva, asignale su lugar en swap
-        printf("mi proceso en su numero loco es %d\n", processpagetable[paginaNueva].framenumber);
+        printf("mi proceso en su numero loco es %d\n", pagetable[paginaNueva].framenumber);
         fflush(stdout);
 
-        if (processpagetable[paginaNueva].framenumber != -1)
+        if (pagetable[paginaNueva].framenumber != -1)
         {
             // haces el algor intercambio
             swapFile = fopen("swap","rb");
 
             // busca la posicion de la página actual en swap
-            fseek(swapFile, processpagetable[paginaNueva].framenumber * PAGESIZE,0);
+            fseek(swapFile, pagetable[paginaNueva].framenumber * PAGESIZE,0);
         }
         else
         {
@@ -85,8 +85,8 @@ int pagefault(char *vaddress)
             // busca la segunda mitad del swap
             fseek(swapFile, indice * PAGESIZE, 0);
             do {
-                struct PROCESSPAGETABLE leido;
-                fread(&leido, sizeof(struct PROCESSPAGETABLE), 1 ,swapFile);
+                struct PAGETABLE leido;
+                fread(&leido, sizeof(struct PAGETABLE), 1 ,swapFile);
                 // si el leido tiene datos, salir del while
                 printf("HOLA CUCU %d \n",leido.framenumber);
                 fflush(stdout);
@@ -106,18 +106,18 @@ int pagefault(char *vaddress)
         // la pagina vieja.presente = 0
         // la pagina vieja.framenumber = indice swapeado
 
-        processpagetable[paginaNueva].presente = 1;
-        processpagetable[paginaNueva].framenumber = marcoNuevo;
+        pagetable[paginaNueva].presente = 1;
+        pagetable[paginaNueva].framenumber = marcoNuevo;
     }
     else {
-        processpagetable[paginaNueva].presente = 1;
-        processpagetable[paginaNueva].framenumber = marcoNuevo;
+        pagetable[paginaNueva].presente = 1;
+        pagetable[paginaNueva].framenumber = marcoNuevo;
 
         swapFile = fopen("swap","wb");
         // busca la posicion de la página nueva en swap
-        fseek(swapFile, processpagetable[paginaNueva].framenumber * PAGESIZE,0);
+        fseek(swapFile, pagetable[paginaNueva].framenumber * PAGESIZE,0);
         // escribe el valor actual en swap
-        fwrite(systemframetable[processpagetable[paginaNueva].framenumber].paddress,1,PAGESIZE,swapFile);
+        fwrite(frametable[pagetable[paginaNueva].framenumber].paddress,1,PAGESIZE,swapFile);
 
         fclose(swapFile);
     }
@@ -130,14 +130,14 @@ int getfreeframe()
 {
     int i;
     // Busca un marco libre en el sistema
-    for(i=framesbegin;i<systemframetablesize+framesbegin;i++)
-        if(!systemframetable[i].assigned)
+    for(i=framesbegin;i<nframes+framesbegin;i++)
+        if(!frametable[i].assigned)
         {
-            systemframetable[i].assigned=1;
+            frametable[i].assigned=1;
             break;
         }
-    if(i<systemframetablesize+framesbegin)
-        systemframetable[i].assigned=1;
+    if(i<framesbegin+nframes)
+        frametable[i].assigned=1;
     else
         i=-1;
     return(i);
@@ -148,14 +148,14 @@ int getOldestUsed()
     int i;
     int oldestIndex=0;
     // busca la pagina mas vieja que este asignada del proceso
-    for(i = 0; i < PROCESSPAGETABLESIZE; i++)
+    for(i = 0; i < PAGESPERPROC; i++)
     {
-        if(systemframetable[processpagetable[i].framenumber].assigned && 
-            processpagetable[i].tlastaccess < processpagetable[oldestIndex].tlastaccess)
+        if(frametable[pagetable[i].framenumber].assigned &&
+            pagetable[i].tlastaccess < pagetable[oldestIndex].tlastaccess)
         {
             oldestIndex=i;
         }
     }
-    
+
     return oldestIndex;
 }

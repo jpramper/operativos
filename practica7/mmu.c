@@ -9,11 +9,11 @@
 #include "semaphores.h"
 #include "mmu.h"
 
-struct SYSTEMFRAMETABLE *systemframetable;
-struct PROCESSPAGETABLE processpagetable[PROCESSPAGETABLESIZE]; 
+struct FRAMETABLE *frametable;
+struct PAGETABLE pagetable[PAGESPERPROC];
 
-int systemframetablesize = SYSTEMFRAMETABLESIZE;
-int processpagetablesize = PROCESSPAGETABLESIZE;
+int nframes = NFRAMES;
+int pagesperproc = PAGESPERPROC;
 int framesbegin;
 int framesend;
 int idproc;
@@ -43,11 +43,11 @@ void detachallpages(int sig)
     int i;
     char *ptr;
 
-    for(i=0;i<PROCESSPAGETABLESIZE;i++)
+    for(i=0;i<PAGESPERPROC;i++)
     {
-        if(processpagetable[i].presente  && processpagetable[i].attached)
+        if(pagetable[i].presente  && pagetable[i].attached)
         {
-            processpagetable[i].attached=0;
+            pagetable[i].attached=0;
             ptr=base+i*PAGESIZE;
             if(shmdt(ptr) == -1)
                 fprintf(stderr,"Detachallpages, Proceso %d, Error en el shmdt %p, página=%i\n",idproc,ptr,i);
@@ -64,28 +64,28 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
     int flags;
     int result;
     char *ptr,*page_ptr;
-    
+
 
     ptr=sip->si_addr;
     vaddress=(char *)((int) sip->si_addr - (int) base);
     pag_del_proceso=(int) vaddress / PAGESIZE;
 
-    if(pag_del_proceso>=PROCESSPAGETABLESIZE)
+    if(pag_del_proceso>=PAGESPERPROC)
     {
         fprintf(stderr,"Error: dirección fuera del espacio asignado al proceso\n");
         exiterror();
     }
 
 
-    if(processpagetable[pag_del_proceso].modificado)
+    if(pagetable[pag_del_proceso].modificado)
         flags=SHM_RND;
-    else  
+    else
         flags=SHM_RND | SHM_RDONLY;
 
     // Si la página está presente y conetcada, trataron de modificarla
     // Poner el bit de modificado en 1
-    if(processpagetable[pag_del_proceso].presente && 
-       processpagetable[pag_del_proceso].attached)
+    if(pagetable[pag_del_proceso].presente &&
+       pagetable[pag_del_proceso].attached)
     {
         if(debugmode)
         {
@@ -93,18 +93,18 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
             printf("Página modificada de la dirección=%X\n",vaddress);
             printf("Proceso=%d Página=%d\n",idproc,pag_del_proceso);
         }
-        processpagetable[pag_del_proceso].modificado=1;
+        pagetable[pag_del_proceso].modificado=1;
         page_ptr=base+pag_del_proceso*PAGESIZE;
         shmdt(page_ptr);
         flags=SHM_RND;
     }
 
-   
+
     // Poner la marca de tiempo
-    processpagetable[pag_del_proceso].tlastaccess=thisinstant();
+    pagetable[pag_del_proceso].tlastaccess=thisinstant();
 
     // Fallo de página cuando la página no está presente
-    if(! processpagetable[pag_del_proceso].presente)
+    if(! pagetable[pag_del_proceso].presente)
     {
 
         if(debugmode)
@@ -113,9 +113,9 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
             printf("Direccion que provocó el fallo=%X\n",(int) vaddress);
             printf("Proceso=%d Página=%d\n",idproc,pag_del_proceso);
         }
-        
+
         // Establece el tiempo de llegada de la página
-        processpagetable[pag_del_proceso].tarrived=processpagetable[pag_del_proceso].tlastaccess;
+        pagetable[pag_del_proceso].tarrived=pagetable[pag_del_proceso].tlastaccess;
         // Cuenta los fallos de página por proceso
         totalpagefaults++;
         // Llama a la rutina de fallos de página
@@ -130,25 +130,25 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
 
         if(debugmode)
         {
-            printf("Proceso=%d, Página %d cargada en el marco %d\n",idproc,pag_del_proceso,processpagetable[pag_del_proceso].framenumber);
+            printf("Proceso=%d, Página %d cargada en el marco %d\n",idproc,pag_del_proceso,pagetable[pag_del_proceso].framenumber);
             printf("Tabla de páginas Proc -> Pag Pr Mo Fr\n");
-            for(i=0;i<PROCESSPAGETABLESIZE;i++)
+            for(i=0;i<PAGESPERPROC;i++)
                 printf("                    %d ->   %d  %d  %d %2X\n",idproc,
                                   i,
-                                  processpagetable[i].presente,
-                                  processpagetable[i].modificado,
-                                  processpagetable[i].framenumber);
+                                  pagetable[i].presente,
+                                  pagetable[i].modificado,
+                                  pagetable[i].framenumber);
         }
     }
 
     // Liberar los marcos que no están asigados a páginas
-    for(i=0;i<PROCESSPAGETABLESIZE;i++)
-        if(!processpagetable[i].presente && processpagetable[i].attached)
+    for(i=0;i<PAGESPERPROC;i++)
+        if(!pagetable[i].presente && pagetable[i].attached)
         {
             if(debugmode)
                 printf("Proceso %d, expulsa página %d\n",idproc,i);
-            processpagetable[i].modificado=0;
-            processpagetable[i].attached=0;
+            pagetable[i].modificado=0;
+            pagetable[i].attached=0;
             if(shmdt(base + i*PAGESIZE)==-1)
             {
                 fprintf(stderr,"Error en el shmdt");
@@ -156,15 +156,15 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
         }
 
     //  Mapear la página con la memoria compartida
-    if(processpagetable[pag_del_proceso].presente)
+    if(pagetable[pag_del_proceso].presente)
     {
-        processpagetable[pag_del_proceso].attached=1;
+        pagetable[pag_del_proceso].attached=1;
 
-        if ((ptr=shmat(systemframetable[processpagetable[pag_del_proceso].framenumber].shmidframe, ptr, flags)) ==NULL)
+        if ((ptr=shmat(frametable[pagetable[pag_del_proceso].framenumber].shmidframe, ptr, flags)) ==NULL)
         {
             fprintf(stderr,"Error al conectarse con memoria compartida\n");
             exiterror();
-        }  
+        }
 
     }
 
@@ -211,7 +211,7 @@ main(int argc, char *argv[])
         {
             fprintf(stderr,"Error en los argumentos\nUso: procesos [/debug|/version]\n");
             exit(1);
-        }        
+        }
 
     // Toma el tiempo de inicio
     gettimeofday(&ts,NULL);
@@ -242,12 +242,12 @@ main(int argc, char *argv[])
     framesptr=tablesarea+PAGESIZE;
     if(debugmode)
         printf("Frames area = %p\n",framesptr);
-    base=framesptr+PHISICALMEMORYSIZE;
+    base=framesptr+MEMSIZE;
     if(debugmode)
         printf("Base = %p\n",base);
 
     // Poner tablas en memoria compartida
-    shmidtables=shmget((key_t) 12345,TABLESSIZE,0666|IPC_CREAT);
+    shmidtables=shmget((key_t) 12345,SHAREDTABLESIZE,0666|IPC_CREAT);
     if(shmidtables==-1)
     {
         fprintf(stderr,"Error en el shmget\n");
@@ -261,10 +261,10 @@ main(int argc, char *argv[])
     }
 
     framesbegin=1+((int) tablesarea/PAGESIZE);
-    framesend=framesbegin+SYSTEMFRAMETABLESIZE;
+    framesend=framesbegin+NFRAMES;
     printf("Primer marco %X\n",framesbegin);
 
-    systemframetable=(struct SYSTEMFRAMETABLE *) tablesarea-framesbegin;
+    frametable=(struct FRAMETABLE *) tablesarea-framesbegin;
 
 
     // Crea la tabla de marcos disponibles del sistema
@@ -272,40 +272,40 @@ main(int argc, char *argv[])
     {
         if ((shmidframes = shmget(2234+i, PAGESIZE, SHM_RND | IPC_CREAT | 0777)) <0)
         {
-            printf("Error could not create shared memory\n");
+            printf("Error could not create shared memory %d %d\n", shmidframes,i);
             exit(1);
         }
-        systemframetable[i].assigned=0;
-        systemframetable[i].shmidframe=shmidframes;
+        frametable[i].assigned=0;
+        frametable[i].shmidframe=shmidframes;
         thisframeptr=framesptr+PAGESIZE*(i-framesbegin);
-        thisframeptr=shmat(systemframetable[i].shmidframe,thisframeptr,SHM_RND);
+        thisframeptr=shmat(frametable[i].shmidframe,thisframeptr,SHM_RND);
         if(thisframeptr==NULL)
         {
             fprintf(stderr,"Error en el shmat\n");
             exit(EXIT_FAILURE);
         }
 
-        systemframetable[i].paddress=(char *) thisframeptr;
+        frametable[i].paddress=(char *) thisframeptr;
         if(debugmode)
-            printf("Frame %X, Dirección %p %p \n",i,thisframeptr,systemframetable[i].paddress);
+            printf("Frame %X, Dirección %p %p \n",i,thisframeptr,frametable[i].paddress);
     }
     // Para los marcos virtuales
     for(i=framesbegin;i<framesend;i++)
-        systemframetable[SYSTEMFRAMETABLESIZE+i].assigned=0;
+        frametable[NFRAMES+i].assigned=0;
 
     // Un semaforo por si las moscas
     exmut=semget((key_t) 3456,1,0600|IPC_CREAT);
     set_semvalue(1,exmut);
 
     // Crea los procesos
-    for(idproc=0;idproc<MAXPROC;idproc++)
+    for(idproc=0;idproc<NPROC;idproc++)
     {
         if(fork()==0)
         {
             settimer();
-            
+
             // base=getbaseaddr();
-            
+
             initprocesspagetable();
 
             switch(idproc)
@@ -321,7 +321,7 @@ main(int argc, char *argv[])
                     break;
                 case 3:
                     proc3();
-                    break; 
+                    break;
             }
 
 
@@ -329,25 +329,25 @@ main(int argc, char *argv[])
             printf("Termina proceso %d, Total de fallos de página = %d\n",idproc,totalpagefaults);
             exit(0);
         }
-     
+
     }
 
     // Espera a que terminen los procesos
-    for(i=0;i<MAXPROC;i++)
+    for(i=0;i<NPROC;i++)
         wait(&statval);
 
     gettimeofday(&ts,NULL);
     endtime=ts.tv_sec*1000000+ts.tv_usec;
     tottime=endtime-starttime;
-    
+
     printf("Tiempo total de ejecución %1.6f\n",(float) tottime/1000000);
 
     // Eliminar memoria compartida
-    for(i=framesbegin;i<framesbegin+SYSTEMFRAMETABLESIZE;i++)
+    for(i=framesbegin;i<framesbegin+NFRAMES;i++)
     {
-        if(shmctl(systemframetable[i].shmidframe,IPC_RMID,&shmbuf)==-1)
+        if(shmctl(frametable[i].shmidframe,IPC_RMID,&shmbuf)==-1)
             fprintf(stderr,"Error al eliminar frame # %d",i);
-    } 
+    }
 
     if(shmdt(tablesarea)==-1)
         fprintf(stderr,"Error en el shmdt final\n");
@@ -363,7 +363,7 @@ main(int argc, char *argv[])
 // < ----- Funciones ----- >
 // -------------------------
 
-   
+
 void *getbaseaddr()
 {
     void *ptr;
@@ -382,15 +382,15 @@ int countframesassigned()
     //  Cuenta los marcos asignados al proceso
     if(debugmode)
         printf("Páginas del proceso -->");
-    for(i=0;i<PROCESSPAGETABLESIZE;i++)
-        if(processpagetable[i].presente)
+    for(i=0;i<PAGESPERPROC;i++)
+        if(pagetable[i].presente)
         {
             if(debugmode)
                 printf(" %d ",i);
             j++;
         }
     if(debugmode)
-        printf("\n"); 
+        printf("\n");
     return(j);
 }
 
@@ -398,19 +398,19 @@ int countframesassigned()
 void initprocesspagetable()
 {
     int i;
-    for(i=0;i<PROCESSPAGETABLESIZE;i++)
+    for(i=0;i<PAGESPERPROC;i++)
     {
-        processpagetable[i].presente=0;
-        processpagetable[i].framenumber=NINGUNO;
-        processpagetable[i].modificado=0;
-        processpagetable[i].attached=0;
+        pagetable[i].presente=0;
+        pagetable[i].framenumber=NINGUNO;
+        pagetable[i].modificado=0;
+        pagetable[i].attached=0;
     }
     return;
 }
 
 
 void freeprocessmem()
-{   
+{
     int i;
     char *ptr;
     struct itimerval itimer, otimer;
@@ -428,22 +428,22 @@ void freeprocessmem()
         exit(1);
     }
 
-    
+
     if(debugmode)
         printf("Proceso %d, libera los marcos -->",idproc);
 
-    for(i=0;i<PROCESSPAGETABLESIZE;i++)
+    for(i=0;i<PAGESPERPROC;i++)
     {
-        if(processpagetable[i].presente)
+        if(pagetable[i].presente)
         {
-            processpagetable[i].presente=0;
-            systemframetable[processpagetable[i].framenumber].assigned=0;
+            pagetable[i].presente=0;
+            frametable[pagetable[i].framenumber].assigned=0;
             if(debugmode)
-                printf(" %X ",processpagetable[i].framenumber);
+                printf(" %X ",pagetable[i].framenumber);
 
-            if(processpagetable[i].attached)
+            if(pagetable[i].attached)
             {
-                processpagetable[i].attached=0;
+                pagetable[i].attached=0;
                 ptr=base+i*PAGESIZE;
                 if(shmdt(ptr) == -1)
                     fprintf(stderr,"Error en el shmdt %p, página=%i\n",ptr,i);
@@ -477,7 +477,7 @@ void settimer()
     {
         fprintf(stderr,"Error en el settimer");
         exit(1);
-    } 
+    }
 
     return;
 }
