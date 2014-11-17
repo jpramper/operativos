@@ -18,7 +18,10 @@
 //process
 #define NPROC 4
 #define PAGESPERPROC NPAGES/NPROC
-#define SHAREDTABLESIZE NPAGES*sizeof(struct FRAMETABLE)
+#define FRAMESPERPROC NFRAMES/NPROC
+//swap table
+#define BUFFERSIZE  sizeof(struct FRAMETABLE)//TODO e igual a FRAMESIZE?
+#define SHAREDTABLESIZE    NPAGES*BUFFERSIZE
 
 // Definición de estructuras
 

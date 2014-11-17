@@ -16,7 +16,7 @@ int pagefault(char *vaddress);
 int getfreeframe();
 int getLRU();
 int getFrameIndex(int pageIndex);
-int getFrameAddress(int pageIndex);
+int getSwapAddress(int pageIndex);
 
 /**
 * @method pagefault Rutina de fallos de página
@@ -24,46 +24,86 @@ int getFrameAddress(int pageIndex);
 */
 int pagefault(char *vaddress)
 {
-  FILE *swapFile;
+  FILE    *swapFile;
+  struct  FRAMETABLE swapBuffer;
+
   int page     = (int) vaddress >> 12;
   int frame    = NINGUNO;
 
-  if(countframesassigned()< 2)
+
+  if(countframesassigned()< FRAMESPERPROC)
       frame = getfreeframe();
 
+  // algoritmo de reemplazo
   if(frame == NINGUNO)
   {
-      // algoritmo de reemplazo
-      int oldPage= getLRU();
-      printf("HOLAAAAAA SOY %d,%d Y ME VAN A REEMPLAZAR POR LA PAGINA %d MODIFED=%d \n",idproc,page,oldPage,pagetable[oldPage].modificado);
-      fflush(stdout);
+      int                 oldPage= getLRU();//indice de la pagina desplazada
+      int                 frameUp   = getFrameIndex(oldPage);
+      int                 frameDown = getFrameIndex(page);
 
-      // si la pagina de salida ha sido modificada, se guarda
-      if (pagetable[oldPage].modificado)
+      //repalda frame desplazado y borra todo su contenido
+      struct  FRAMETABLE  oldFrameHandler= frametable[frameUp]; //frame desplazado
+      frametable[frameUp].assigned= NULL;
+      frametable[frameUp].paddress= NULL;
+      frametable[frameUp].shmidframe= NULL;
+
+      printf("HOLAAAAAA hubo cambios... %d,%d VS %d\n",idproc,page,oldPage);
+
+      // si la pagina nueva no tiene un espacio en swap asignado, se le busca uno libre
+      if (frameDown == NINGUNO)
       {
-          printf("TOY SUCIO :B\n");
-          fflush(stdout);
+          swapFile = fopen("swap","rb");
 
-          pagetable[oldPage].modificado= FALSE;
+          for( frameDown=MEMSIZE ; frameDown<SWAPSIZE ; frameDown+=FRAMESIZE)
+          {
+              fread(&swapBuffer, BUFFERSIZE, 1 ,swapFile);
+              if(swapBuffer.assigned<=0)
+                    break;
+          }
+          fclose(swapFile);
 
-          swapFile = fopen("swap","wb");
-          fseek(swapFile, getFrameAddress(oldPage),0);
-          fwrite(&pagetable[oldPage], PAGESIZE, 1, swapFile);
+          if(frameDown > SWAPSIZE)
+            return ERROR;
+          else
+            frameDown+=framesbegin;
+      }
+      // si ya tiene su espacio en la parte baja, se copia a la parte alta
+      else
+      {
+          frameDown= getFrameIndex(page);
 
+          swapFile = fopen("swap","rb");
+          fseek(swapFile, getSwapAddress(page),0);
+          fread(&frametable[getFrameIndex(oldPage)], sizeof(struct FRAMETABLE), 1 ,swapFile);
           fclose(swapFile);
       }
 
-      if (pagetable[page].framenumber == NINGUNO)
-      {
+      //escribe la parte baja (el frame desplazado)
+      swapFile = fopen("swap","wb");
+      fseek(swapFile, frameDown,0);
+      fwrite(&oldFrameHandler, PAGESIZE, 1, swapFile);
+      fclose(swapFile);
 
-      }
+      pagetable[oldPage].presente= FALSE;
+      pagetable[oldPage].modificado= FALSE;
+      pagetable[page].framenumber= frameDown;
 
-      return -1;
+      frame= frameUp;
+
+      printf("mira: %d\n",oldFrameHandler.shmidframe);
+      printf("y mira: %d\n",frametable[frame].shmidframe);
+
   }
 
   printf("HOLAAAAAA MI ESTAN GUARDANDO %d,%d EN %d\n",idproc,page,frame);
+
+  printf("---MI ADDR=%ld\n",vaddress);
+  printf("---MI framesbegin=%d\n",framesbegin);
+  printf("---MI getbaseaddr=%c\n",getbaseaddr());
+
   fflush(stdout);
 
+  //actualiza parte alta
   pagetable[page].presente    = TRUE;
   pagetable[page].modificado  = TRUE;
   pagetable[page].framenumber = frame;
@@ -78,7 +118,7 @@ int pagefault(char *vaddress)
 int getfreeframe()
 {
     int frame;
-    for( frame=framesbegin ;frame<nframes+framesbegin ; frame++)
+    for( frame=framesbegin ;frame<framesbegin+nframes ; frame++)
       if(!frametable[frame].assigned)
       {
         frametable[frame].assigned = TRUE;
@@ -96,7 +136,7 @@ int getLRU()
 {
     int i=0;
     int index=0;
-    
+
     for(i = 0; i < PAGESPERPROC; i++)
       if(pagetable[i].tlastaccess < pagetable[index].tlastaccess &&
           getFrameIndex(i)!=NINGUNO)
@@ -117,10 +157,10 @@ int getFrameIndex(int pageIndex)
 }
 
 /**
-* @method getFrameAddress
+* @method getSwapAddress
 * @return position of a page mapped to a frame inside disk
 */
-int getFrameAddress(int pageIndex)
+int getSwapAddress(int pageIndex)
 {
   return (pagetable[pageIndex].framenumber-framesbegin) * FRAMESIZE;
 }
