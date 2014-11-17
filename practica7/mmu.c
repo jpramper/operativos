@@ -147,9 +147,9 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
         {
             if(debugmode)
                 printf("Proceso %d, expulsa página %d\n",idproc,i);
-            pagetable[i].modificado=0;
-            pagetable[i].attached=0;
-            if(shmdt(base + i*PAGESIZE)==-1)
+            pagetable[i].modificado=  FALSE;
+            pagetable[i].attached=  FALSE;
+            if(shmdt(base + i*PAGESIZE)== NINGUNO )
             {
                 fprintf(stderr,"Error en el shmdt");
             }
@@ -158,7 +158,9 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
     //  Mapear la página con la memoria compartida
     if(pagetable[pag_del_proceso].presente)
     {
-        pagetable[pag_del_proceso].attached=1;
+        if(debugmode)
+            printf("Proceso %d, adjunta página %d\n",idproc,pag_del_proceso);
+        pagetable[pag_del_proceso].attached= TRUE;
 
         if ((ptr=shmat(frametable[pagetable[pag_del_proceso].framenumber].shmidframe, ptr, flags)) ==NULL)
         {
@@ -436,16 +438,16 @@ void freeprocessmem()
     {
         if(pagetable[i].presente)
         {
-            pagetable[i].presente=0;
+            pagetable[i].presente=FALSE;
             frametable[pagetable[i].framenumber].assigned=FALSE;
             if(debugmode)
                 printf(" %X ",pagetable[i].framenumber);
 
             if(pagetable[i].attached)
             {
-                pagetable[i].attached=0;
+                pagetable[i].attached=FALSE;
                 ptr=base+i*PAGESIZE;
-                if(shmdt(ptr) == -1)
+                if(shmdt(ptr) == ERROR)
                     fprintf(stderr,"Error en el shmdt %p, página=%i\n",ptr,i);
             }
         }

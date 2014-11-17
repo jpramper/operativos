@@ -41,13 +41,8 @@ int pagefault(char *vaddress)
       int                 frameUp   = getFrameIndex(oldPage);
       int                 frameDown = getFrameIndex(page);
 
-      //repalda frame desplazado y borra todo su contenido
       struct  FRAMETABLE  oldFrameHandler= frametable[frameUp]; //frame desplazado
-      frametable[frameUp].assigned= NULL;
-      frametable[frameUp].paddress= NULL;
-      frametable[frameUp].shmidframe= NULL;
-
-      printf("HOLAAAAAA hubo cambios... %d,%d VS %d\n",idproc,page,oldPage);
+      frametable[frameUp].assigned= FALSE;// resetea el frame
 
       // si la pagina nueva no tiene un espacio en swap asignado, se le busca uno libre
       if (frameDown == NINGUNO)
@@ -86,20 +81,10 @@ int pagefault(char *vaddress)
 
       pagetable[oldPage].presente= FALSE;
       pagetable[oldPage].modificado= FALSE;
-      pagetable[page].framenumber= frameDown;
+      pagetable[oldPage].framenumber= frameDown;
 
       frame= frameUp;
-
-      printf("mira: %d\n",oldFrameHandler.shmidframe);
-      printf("y mira: %d\n",frametable[frame].shmidframe);
-
   }
-
-  printf("HOLAAAAAA MI ESTAN GUARDANDO %d,%d EN %d\n",idproc,page,frame);
-
-  printf("---MI ADDR=%ld\n",vaddress);
-  printf("---MI framesbegin=%d\n",framesbegin);
-  printf("---MI getbaseaddr=%c\n",getbaseaddr());
 
   fflush(stdout);
 
