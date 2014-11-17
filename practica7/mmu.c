@@ -275,7 +275,7 @@ main(int argc, char *argv[])
             printf("Error could not create shared memory %d %d\n", shmidframes,i);
             exit(1);
         }
-        frametable[i].assigned=0;
+        frametable[i].assigned=FALSE;
         frametable[i].shmidframe=shmidframes;
         thisframeptr=framesptr+PAGESIZE*(i-framesbegin);
         thisframeptr=shmat(frametable[i].shmidframe,thisframeptr,SHM_RND);
@@ -291,7 +291,7 @@ main(int argc, char *argv[])
     }
     // Para los marcos virtuales
     for(i=framesbegin;i<framesend;i++)
-        frametable[NFRAMES+i].assigned=0;
+        frametable[NFRAMES+i].assigned=FALSE;
 
     // Un semaforo por si las moscas
     exmut=semget((key_t) 3456,1,0600|IPC_CREAT);
@@ -400,10 +400,10 @@ void initprocesspagetable()
     int i;
     for(i=0;i<PAGESPERPROC;i++)
     {
-        pagetable[i].presente=0;
-        pagetable[i].framenumber=NINGUNO;
-        pagetable[i].modificado=0;
-        pagetable[i].attached=0;
+        pagetable[i].presente   =   FALSE;
+        pagetable[i].framenumber=   NINGUNO;
+        pagetable[i].modificado =   FALSE;
+        pagetable[i].attached   =   FALSE;
     }
     return;
 }
@@ -437,7 +437,7 @@ void freeprocessmem()
         if(pagetable[i].presente)
         {
             pagetable[i].presente=0;
-            frametable[pagetable[i].framenumber].assigned=0;
+            frametable[pagetable[i].framenumber].assigned=FALSE;
             if(debugmode)
                 printf(" %X ",pagetable[i].framenumber);
 

@@ -1,5 +1,9 @@
 // Definición de constantes
 #define NINGUNO -1
+#define ERROR -1
+#define SUCCESS  1
+#define TRUE  1
+#define FALSE 0
 #define VERSION "mmu versión 10.0326.00\n"
 
 //frames
