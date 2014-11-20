@@ -18,6 +18,7 @@ int getLRU();
 void execSwap(int newPageIndex);
 int getFreeSwapAddress();
 int hasFisicalAddress(int pageIndex);
+void write(struct FRAMETABLE *frame, int address);
 
 /**
 * @method pagefault Rutina de fallos de página
@@ -60,7 +61,7 @@ int getfreeframe()
 */
 void execSwap(int newPageIndex)
 {
-    FILE   *swapFile = fopen("swap","r+b");
+    FILE   *swapFile = fopen("swap","rb");
 
     // 1 nos aseguramos de tener los indices basicos:
     /*
@@ -80,31 +81,42 @@ void execSwap(int newPageIndex)
     // 2 leemos contenidos de swap
     struct FRAMETABLE swapContentUp;
     struct FRAMETABLE swapContentDown;
-
     fseek(swapFile, addressUp-framesbegin,SEEK_SET);
-    fread(&swapContentUp, BUFFERSIZE, 1 ,swapFile);
+    fread(&swapContentUp, sizeof(struct FRAMETABLE), 1 ,swapFile);
     fseek(swapFile, addressDown-framesbegin,SEEK_SET);
-    fread(&swapContentDown, BUFFERSIZE, 1 ,swapFile);
-
+    fread(&swapContentDown, sizeof(struct FRAMETABLE), 1 ,swapFile);
 
     // 3 guardamos contenido bajo
-    fseek(swapFile, addressDown-framesbegin,SEEK_SET);
     if(pagetable[oldPageIndex].modificado)
-          fwrite(&frametable[addressUp], sizeof(struct FRAMETABLE), 1, swapFile);//si fue modificado, se guarda el que esta en ram
+        write(&frametable[addressUp], addressDown);
     else
-        fwrite(&swapContentUp, sizeof(struct FRAMETABLE), 1, swapFile);//si no, se guarda el que esta en archivo
+        write(&swapContentUp, addressDown);
 
     pagetable[oldPageIndex].presente    = FALSE;
     pagetable[oldPageIndex].modificado  = FALSE;
 
     // 4 guardamos contenido alto
-    if(swapContentDown.assigned)
-        frametable[addressUp]= swapContentDown;
+    fflush(stdout);
+    if(swapContentDown.shmidframe < 0)
+        {
+          frametable[addressUp]= swapContentDown;
+          printf("recuperamos algo");
+        }
+    else
+        write(&swapContentDown, addressUp);
 
     // 5 actualizamos indices
     pagetable[newPageIndex].framenumber=addressUp;
     pagetable[oldPageIndex].framenumber=addressDown;
 
+    fclose(swapFile);
+}
+
+void write(struct FRAMETABLE *frame, int address)
+{
+    FILE   *swapFile = fopen("swap","wb");
+    fseek(swapFile, address-framesbegin,SEEK_SET);
+    fwrite(frame, sizeof(struct FRAMETABLE), 1, swapFile);
     fclose(swapFile);
 }
 
@@ -114,18 +126,24 @@ void execSwap(int newPageIndex)
 */
 int getFreeSwapAddress()
 {
-    FILE   *swapFile = fopen("swap","rb");
+    FILE   *swapFile = fopen("swap","r+b");
     struct  FRAMETABLE swapBuffer;
     int     freeAddress;
-
-    fseek(swapFile, MEMSIZE,0);//se coloca en la parte baja de la memoria (frame 9-16)
-    for( freeAddress=MEMSIZE ; freeAddress<SWAPSIZE ; freeAddress+=FRAMESIZE)
+    fseek(swapFile, MEMSIZE,SEEK_SET);//se coloca en la parte baja de la memoria (frame 9-16)
+    for( freeAddress=MEMSIZE+(FRAMESIZE*(PAGESPERPROC-FRAMESPERPROC)*idproc) ; freeAddress<SWAPSIZE ; freeAddress+=FRAMESIZE)
     {
-        fread(&swapBuffer, BUFFERSIZE, 1 ,swapFile);
-        if(swapBuffer.assigned<=0)
-              break;
+        fread(&swapBuffer, sizeof(struct FRAMETABLE), 1 ,swapFile);
+        //printf("\nP%d iteracion:%d leemos: %d\n------------------\n------------------\n",idproc,freeAddress,swapBuffer.assigned);
+        if(swapBuffer.assigned==0)
+        {
+                swapBuffer.assigned=1;
+                fseek(swapFile, -sizeof(struct FRAMETABLE),SEEK_CUR);//se regresa y prende bit de assigned
+                fwrite(&swapBuffer, sizeof(struct FRAMETABLE), 1, swapFile);
+                break;
+        }
     }
     fclose(swapFile);
+    //printf("\nP%d otorgarmos el libre: %d\n------------------\n------------------\n",idproc,freeAddress);
 
     if(freeAddress > SWAPSIZE)
       return ERROR;

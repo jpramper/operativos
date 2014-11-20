@@ -23,7 +23,7 @@ void proc0()
     sprintf(ptr,"Escritura del proceso %d\0",idproc);
     for(i=0;i<3;i++)
     {
-        printf("%s\n",ptr);
+        printf("PROC0 i=%d %s\n",i,ptr);
 
         sleep(1);
 
@@ -80,7 +80,7 @@ void proc1()
     sprintf(ptr,"Proceso 1, escribe mensaje de prueba\0");
     for(i=0;i<3;i++)
     {
-        printf("%s\n",ptr);
+        printf("PROC1 i=%d %s\n",i,ptr);
 
         sleep(1);
 
