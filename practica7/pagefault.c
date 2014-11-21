@@ -26,16 +26,21 @@ void write(struct FRAMETABLE *frame, int address);
 */
 int pagefault(char *vaddress)
 {
-  int pageIndex     = (int) vaddress >> 12; // page index in pagetable
+    int pageIndex     = (int) vaddress >> 12; // page index in pagetable
 
-  if(countframesassigned()< FRAMESPERPROC)
-      pagetable[pageIndex].framenumber = getfreeframe();
+    // mientras haya menos de 2 paginas por proceso en la tabla de marcos, asignale nueva
+    if(countframesassigned()< FRAMESPERPROC)
+        pagetable[pageIndex].framenumber = getfreeframe();
 
-  if(!hasFisicalAddress(pageIndex))
-      execSwap(pageIndex);
+    // si la página que se pide no tiene una posición en la parte alta de la tabla de marcos,
+    // ejecuta el intercambio de ésta con alguna vieja
+    if(!hasFisicalAddress(pageIndex))
+        execSwap(pageIndex);
 
-  pagetable[pageIndex].presente    = TRUE;
-  return SUCCESS;
+    // marca la nueva como presente
+    pagetable[pageIndex].presente    = TRUE;
+
+    return SUCCESS;
 }
 
 /**
@@ -72,42 +77,52 @@ void execSwap(int newPageIndex)
     */
     int oldPageIndex   = getLRU();//indice de la pagina removida
 
+    // si la página es nueva, busca un índice en swap libre, debajo del márgen de la memoria física
     if (pagetable[newPageIndex].framenumber == NINGUNO)
         pagetable[newPageIndex].framenumber = getFreeSwapAddress();
 
+    // almacenas las direcciones relativas de la tabla de marcos fisicos
     int addressUp= pagetable[oldPageIndex].framenumber;
     int addressDown= pagetable[newPageIndex].framenumber;
 
     // 2 leemos contenidos de swap
-    struct FRAMETABLE swapContentUp;
-    struct FRAMETABLE swapContentDown;
+    struct FRAMETABLE swapContentUp; // viejo
+    struct FRAMETABLE swapContentDown; // nuevo
+
     fseek(swapFile, addressUp-framesbegin,SEEK_SET);
     fread(&swapContentUp, sizeof(struct FRAMETABLE), 1 ,swapFile);
     fseek(swapFile, addressDown-framesbegin,SEEK_SET);
     fread(&swapContentDown, sizeof(struct FRAMETABLE), 1 ,swapFile);
 
     // 3 guardamos contenido bajo
+    // se escribe el marco viejo en la direccion baja de swap;
+    // si se modificó viene de la talba de marcos, 
+    // de lo contrario se obtiene del mismo swap
     if(pagetable[oldPageIndex].modificado)
         write(&frametable[addressUp], addressDown);
     else
         write(&swapContentUp, addressDown);
 
+    // actualiza las propiedades de la página vieja 
+    // en la tabla de páginas del proceso
     pagetable[oldPageIndex].presente    = FALSE;
     pagetable[oldPageIndex].modificado  = FALSE;
 
     // 4 guardamos contenido alto
+    // ahora se escribe el marco nuevo en la parte alta
     fflush(stdout);
-    if(swapContentDown.shmidframe < 0)
-        {
-          frametable[addressUp]= swapContentDown;
-          printf("recuperamos algo");
-        }
-    else
-        write(&swapContentDown, addressUp);
+    //if(swapContentDown.shmidframe < 0)
+    //    {
+    //      frametable[addressUp]= swapContentDown;
+    //      printf("Prueba de memoria compratida");
+    //    }
+    //else
+    write(&swapContentDown, addressUp);
 
     // 5 actualizamos indices
-    pagetable[newPageIndex].framenumber=addressUp;
-    pagetable[oldPageIndex].framenumber=addressDown;
+    // se actualizan los apuntadores de las páginas del proceso
+    pagetable[newPageIndex].framenumber = addressUp;
+    pagetable[oldPageIndex].framenumber = addressDown;
 
     fclose(swapFile);
 }
@@ -129,8 +144,15 @@ int getFreeSwapAddress()
     FILE   *swapFile = fopen("swap","r+b");
     struct  FRAMETABLE swapBuffer;
     int     freeAddress;
-    fseek(swapFile, MEMSIZE,SEEK_SET);//se coloca en la parte baja de la memoria (frame 9-16)
-    for( freeAddress=MEMSIZE+(FRAMESIZE*(PAGESPERPROC-FRAMESPERPROC)*idproc) ; freeAddress<SWAPSIZE ; freeAddress+=FRAMESIZE)
+
+    // se coloca en la parte baja de la memoria (frame 9-16)
+    fseek(swapFile, MEMSIZE,SEEK_SET);
+
+    // itera desde la posicion del proceso en el swap: cada proceso tiene asignados
+    // tantos frames como páginas sobren de la tabla de marcos físicos (en este caso, 2 páginas de sobra)
+    for(freeAddress = MEMSIZE + (FRAMESIZE * (PAGESPERPROC - FRAMESPERPROC) * idproc); 
+        freeAddress < SWAPSIZE; 
+        freeAddress += FRAMESIZE)
     {
         fread(&swapBuffer, sizeof(struct FRAMETABLE), 1 ,swapFile);
         //printf("\nP%d iteracion:%d leemos: %d\n------------------\n------------------\n",idproc,freeAddress,swapBuffer.assigned);
@@ -146,9 +168,11 @@ int getFreeSwapAddress()
     //printf("\nP%d otorgarmos el libre: %d\n------------------\n------------------\n",idproc,freeAddress);
 
     if(freeAddress > SWAPSIZE)
-      return ERROR;
+        return ERROR;
     else
-      return freeAddress+framesbegin;
+        // sumamos el offset de la direccion de la tabla de marcos fisica.
+        // este offset debe ser restado al manejar direcciones de I/O del swap
+        return freeAddress+framesbegin; 
 }
 
 /**
