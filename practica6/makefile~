@@ -1,4 +1,0 @@
-all:
-	gcc -o procesos procesos.c
-	gcc -o semaforos semaforos.c
-	gcc -o mensajes mensajes.c

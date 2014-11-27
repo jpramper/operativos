@@ -114,6 +114,9 @@ void seg_handler(int sig,siginfo_t *sip,void *notused)
             printf("Proceso=%d Página=%d\n",idproc,pag_del_proceso);
         }
 
+        printf("---ENTRE A FALLO DE PAGINA DE PROCESO %\n");
+        printf("Proceso=%d Página=%d\n",idproc,pag_del_proceso);
+
         // Establece el tiempo de llegada de la página
         pagetable[pag_del_proceso].tarrived=pagetable[pag_del_proceso].tlastaccess;
         // Cuenta los fallos de página por proceso
