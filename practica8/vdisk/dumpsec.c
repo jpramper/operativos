@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "vdisk.h"
+#include "vdisk.c"
+
 #define LINESIZE 16
 #define SECSIZE 512
 
@@ -26,8 +29,7 @@ int main(int argc,char *argv[])
 			fprintf(stderr,"Posición invalida\n");
 			exit(1);
 		}
-		printf("Desplegando de disco%d.vd Cil=%d, Sup=%d, 
-			Sec=%d\n",drive,ncyl,nhead,nsec);
+		printf("Desplegando de disco%d.vd Cil=%d, Sup=%d, Sec=%d\n",drive,ncyl,nhead,nsec);
 	}
 	else
 	{
