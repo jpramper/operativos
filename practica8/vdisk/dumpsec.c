@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "vdisk.h"
 #include "vdisk.c"
 
 #define LINESIZE 16

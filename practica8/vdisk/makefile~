@@ -1,5 +1,0 @@
-all:
-	gcc -o dumpsec dumpsec.c
-	gcc -o createvd createvd.c
-	gcc -o vdisk vdisk.c
-

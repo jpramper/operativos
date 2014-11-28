@@ -7,6 +7,26 @@
 int currentcyl[4]={0,0,0,0};
 int currentsec[4]={0,0,0,0};
 
+int vdwritesl(int sl, int nsecs, char *buffer)
+{
+    int drive = 0;
+    int ncyl = sl / (SECTORS * HEADS);
+    int nhead = (sl / SECTORS) % HEADS;
+    int nsec = (sl % SECTORS) + 1;
+
+    return vdwritesector(drive, nhead, ncyl, nsec, nsecs, buffer);
+}
+
+int vdreadsl(int sl, int nsecs, char *buffer)
+{
+    int drive = 0;
+    int ncyl = sl / (SECTORS * HEADS);
+    int nhead = (sl / SECTORS) % HEADS;
+    int nsec = (sl % SECTORS) + 1;
+
+    return vdreadsector(drive, nhead, ncyl, nsec, nsecs, buffer);
+}
+
 int vdwritesector(int drive, int head, int cylinder, int sector, int nsecs, char *buffer)
 {
     char filename[20];
