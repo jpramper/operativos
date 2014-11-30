@@ -1,0 +1,7 @@
+all:
+	gcc -o dumpsec dumpsec.c
+	gcc -o createvd createvd.c
+	gcc -o global global.c
+	gcc -o vdisk vdisk.c
+	gcc -o logicSectors logicSectors.c
+	gcc -o iNode iNode.c

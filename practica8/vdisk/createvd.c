@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "vdisk.h"
+#include "global.h"
 
 #define NSECS HEADS*SECTORS*CYLINDERS
 

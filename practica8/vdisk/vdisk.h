@@ -1,33 +1,126 @@
-#define HEADS 16   //superficies
-#define SECTORS 11
-#define CYLINDERS 100 
-#define SECSIZE 512
-#define SECxBLOCK 4 
+#include <sys/types.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 
-struct SECBOOT{
-	char jump[4];
-	char nombre_disco[8];
-	unsigned char sec_res;   //reservado
-	unsigned char sec_mapa_bits_nodo_i;
-	unsigned char sec_mapa_bits_bloques;
-	unsigned short sec_tabla_nodos_i;
-	unsigned short sec_log_unidad; // 
-	unsigned char sec_x_bloque;
-	unsigned char heads;
-	unsigned char cyls;
-	unsigned char secfis; // sectores por superficie
-	char restante[487];
-};
+#include "global.h"
 
-struct INODE{
-	char name[20];
-	unsigned short uid;   // user ID
-	unsigned short gid;   // group ID
-	unsigned short perms;  //permisos
-	unsigned int datetimecreate;  // fecha de creacion
-	unsigned int datetimemodif; // fecha de modificacion
-	unsigned int size;			// size del archivo en bytes
-	unsigned short blocks[10];
-	unsigned short indirect;
-	unsigned short indirect2;
-};
+int currentcyl[4]={0,0,0,0};
+int currentsec[4]={0,0,0,0};
+
+int vdwritels(int sl, int nsecs, char *buffer)
+{
+    int drive = 0;
+    int ncyl = sl / (SECTORS * HEADS);
+    int nhead = (sl / SECTORS) % HEADS;
+    int nsec = (sl % SECTORS) + 1;
+
+    return vdwritesector(drive, nhead, ncyl, nsec, nsecs, buffer);
+}
+
+int vdreadls(int sl, int nsecs, char *buffer)
+{
+    int drive = 0;
+    int ncyl = sl / (SECTORS * HEADS);
+    int nhead = (sl / SECTORS) % HEADS;
+    int nsec = (sl % SECTORS) + 1;
+
+	//printf("aahhh osea que buscas: %d, %d, %d, %d \n" , drive,ncyl, nhead, nsec);
+    return vdreadsector(drive, nhead, ncyl, nsec, nsecs, buffer);
+}
+
+int vdwritesector(int drive, int head, int cylinder, int sector, int nsecs, char *buffer)
+{
+    char filename[20];
+    int fp;
+    int timecyl,timesec;
+    int sl,offset;
+    sprintf(filename,"disco%c.vd",(char) drive+'0');
+    fp=open(filename,O_WRONLY);
+    if(fp==-1)
+        return(-1);
+
+    // Valida parámetros
+    if(drive<0 || drive>3)
+        return(-1);
+
+    if(head<0 || head>=HEADS)
+        return(-1);
+
+    if(cylinder<0 || cylinder>=CYLINDERS)
+        return(-1);
+
+    if(sector<1 || sector>SECTORS)
+        return(-1);
+
+    if(sector+nsecs-1>SECTORS)
+        return(-1);
+
+    // Hace el retardo
+    timesec=sector-currentsec[drive];
+    if(timesec<0)
+        timesec+=SECTORS;
+    usleep(timesec*1000);
+    currentsec[drive]=sector;
+
+    timecyl=abs(currentcyl[drive]-cylinder);
+    usleep(timecyl*1000);    
+    currentcyl[drive]=cylinder;
+
+    // Calcula la posición en el archivo
+    sl=cylinder*SECTORS*HEADS+head*SECTORS+(sector-1);
+    offset=sl*512;
+    lseek(fp,offset,SEEK_SET);
+    write(fp,buffer,512*nsecs);
+    close(fp);
+    return(nsecs);
+}
+
+int vdreadsector(int drive, int head, int cylinder, int sector, int nsecs, char *buffer)
+{
+    char filename[20];
+    int fp;
+    int timecyl,timesec;
+    int sl,offset;
+    sprintf(filename,"disco%c.vd",(char) drive+'0');
+    fp=open(filename,O_RDONLY);
+    if(fp==-1)
+        return(-1);
+                                                                                
+    // Valida parámetros
+    if(drive<0 || drive>3)
+        return(-1);
+                                                                                
+    if(head<0 || head>=HEADS)
+        return(-1);
+                                                                                
+    if(cylinder<0 || cylinder>=CYLINDERS)
+        return(-1);
+                                                                                
+    if(sector<1 || sector>SECTORS)
+        return(-1);
+                                                                                
+    if(sector+nsecs-1>SECTORS)
+        return(-1);
+                                                                                
+    // Hace el retardo
+    timesec=sector-currentsec[drive];
+    if(timesec<0)
+        timesec+=SECTORS;
+    usleep(timesec*1000);
+    currentsec[drive]=sector;
+                                                                                
+    timecyl=abs(currentcyl[drive]-cylinder);
+    usleep(timecyl*1000);
+    currentcyl[drive]=cylinder;
+                                                                                
+    // Calcula la posición en el archivo
+    sl=cylinder*SECTORS*HEADS+head*SECTORS+(sector-1);
+    offset=sl*512;
+    lseek(fp,offset,SEEK_SET);
+    read(fp,buffer,512*nsecs);
+    close(fp);
+    return(nsecs);
+}
+                                                                                
+
