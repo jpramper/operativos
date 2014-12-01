@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "dataArea.h"
 
@@ -13,6 +14,8 @@ extern unsigned char iNodesMap[SECSIZE]; //mapa de bits de iNode
 
 extern short datamap_en_memoria;	//bandera de el mapa de datos
 extern unsigned char dataMap[SECSIZE]; // el mapa de datos
+
+unsigned int currdatetimetoint();
 
 // *************************************************************************
 // Para el mapa de bits del área de nodos i
@@ -146,6 +149,7 @@ int unassigninode(int inode)
 // gid id del grupo dueño del archivo
 int setninode(int num, char *filename,unsigned short atribs, int uid, int gid)
 {
+	/*-----------------TODOOOODOOOODOODOODOO----------------------------*/
 	int i;
 
 	if(!secboot_en_memoria)
@@ -166,7 +170,7 @@ int setninode(int num, char *filename,unsigned short atribs, int uid, int gid)
 	strncpy(dirRaiz[num].name,filename,20);
 	if(strlen(dirRaiz[num].name)>19)
 	 	dirRaiz[num].name[19]='\0';
-	dirRaiz[num].datetimecreat=currdatetimetoint();
+	dirRaiz[num].datetimecreate=currdatetimetoint();
 	dirRaiz[num].datetimemodif=currdatetimetoint();
 	dirRaiz[num].uid=uid;
 	dirRaiz[num].gid=gid;
@@ -184,7 +188,7 @@ int setninode(int num, char *filename,unsigned short atribs, int uid, int gid)
 	// i=num/8;
 	// result=vdwritels(inicio_nodos_i+i,&dirRaiz[i*8]);
 	for(i=0;i<secBoot.sec_tabla_nodos_i;i++)
-		result=vdwritels(inicio_nodos_i+i,&dirRaiz[i*8]);
+		vdwritels(iNodeLs()+i,1,&dirRaiz[i*8]);
 
 	return(num);
 }

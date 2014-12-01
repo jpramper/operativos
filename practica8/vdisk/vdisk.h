@@ -69,9 +69,9 @@ int vdwritesector(int drive, int head, int cylinder, int sector, int nsecs, char
 
     // Calcula la posición en el archivo
     sl=cylinder*SECTORS*HEADS+head*SECTORS+(sector-1);
-    offset=sl*512;
+    offset=sl*SECSIZE;
     lseek(fp,offset,SEEK_SET);
-    write(fp,buffer,512*nsecs);
+    write(fp,buffer,SECSIZE*nsecs);
     close(fp);
     return(nsecs);
 }
@@ -116,9 +116,9 @@ int vdreadsector(int drive, int head, int cylinder, int sector, int nsecs, char 
                                                                                 
     // Calcula la posición en el archivo
     sl=cylinder*SECTORS*HEADS+head*SECTORS+(sector-1);
-    offset=sl*512;
+    offset=sl*SECSIZE;
     lseek(fp,offset,SEEK_SET);
-    read(fp,buffer,512*nsecs);
+    read(fp,buffer,SECSIZE*nsecs);
     close(fp);
     return(nsecs);
 }

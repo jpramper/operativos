@@ -33,6 +33,15 @@ struct INODE{
 	unsigned short indirect2;
 }; 
 
+struct DATE {
+	int year;
+	int month;
+	int day;
+	int hour;
+	int min;
+	int sec;
+};
+
 short secboot_en_memoria = 0;  //bandera de sec boot
 struct SECBOOT secBoot;	   // estructura secboot
 
@@ -42,5 +51,7 @@ unsigned char iNodesMap[SECSIZE]; //mapa de bits de iNode
 short datamap_en_memoria = 0;	//bandera de el mapa de datos
 unsigned char dataMap[SECSIZE]; // el mapa de datos
 
+short dirraiz_en_memoria = 0;	//bandera de el mapa de datos
 struct INODE dirRaiz[NINODES]; // directorio raiz de inodos
 // num de inodos que caben en un sector, por 8 sectores
+

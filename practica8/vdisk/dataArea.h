@@ -17,6 +17,42 @@ extern unsigned char dataMap[SECSIZE]; // el mapa de datos
 // Para el mapa de bits del área de de datos
 // ******************************************************************************
 
+int nextfreeblock()
+{
+	int i,j;
+
+	if(!secboot_en_memoria)
+	{
+		if (vdreadls(mbrLs(),1,(char *) &secBoot) == -1) //inicializamos sector boot si no existia antes
+			return -1;
+		secboot_en_memoria=1;
+	}
+
+	if(!datamap_en_memoria)
+	{
+		if (vdreadls(dataMapLs(),1, &dataMap) == -1) //inicializamos sector boot si no existia antes
+			return -1;
+		datamap_en_memoria=1;
+	}
+
+	i=0;
+	while(dataMap[i]==0xFF && i<secBoot.sec_mapa_bits_bloques*SECSIZE)
+		i++;
+
+	if(i<secBoot.sec_mapa_bits_bloques*SECSIZE)
+	{
+		j=0;
+		while(dataMap[i] & (1<<j) && j<8)
+			j++;
+
+		return(i*8+j);
+	}
+	else
+		return(-1);
+
+		
+}
+
 int isblockfree(int block)
 {
 	int offset=block/8;
@@ -40,73 +76,31 @@ int isblockfree(int block)
 		return(0);
 
 	return(1);
-}	
-
-int nextfreeblock()
-{
-	int i,j;
-	int result;
-
-	if(!secboot_en_memoria)
-	{
-		result=vdreadsector(0,0,0,1,1,(char *) &secBoot);
-		secboot_en_memoria=1;
-	}
-
-	mapa_bits_bloques = secboot.sec_res+secboot.sec_mapa_bits_nodos_i;
-
-	if(!blocksmap_en_memoria)
-	{
-		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
-			result=vdreadseclog(mapa_bits_bloques+i,blocksmap+i*512);
-		blocksmap_en_memoria=1;
-	} 
-
-	i=0;
-	while(blocksmap[i]==0xFF && i<secboot.sec_mapa_bits_bloques*512)
-		i++;
-
-	if(i<secboot.sec_mapa_bits_bloques*512)
-	{
-		j=0;
-		while(blocksmap[i] & (1<<j) && j<8)
-			j++;
-
-		return(i*8+j);
-	}
-	else
-		return(-1);
-
-		
 }
 
 int assignblock(int block)
 {
 	int offset=block/8;
 	int shift=block%8;
-	int result;
-	int i;
-	int sector;
 
 	if(!secboot_en_memoria)
 	{
-		result=vdreadsector(0,0,0,1,1,(char *) &secBoot);
+		if (vdreadls(mbrLs(),1,(char *) &secBoot) == -1) //inicializamos sector boot si no existia antes
+			return -1;
 		secboot_en_memoria=1;
 	}
 
-	mapa_bits_bloques= secboot.sec_res+secboot.sec_mapa_bits_nodos_i;
-
-	if(!blocksmap_en_memoria)
+	if(!datamap_en_memoria)
 	{
-		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
-			result=vdreadseclog(mapa_bits_bloques+i,blocksmap+i*512);
-		blocksmap_en_memoria=1;
-	} 
+		if (vdreadls(dataMapLs(),1, &dataMap) == -1) //inicializamos sector boot si no existia antes
+			return -1;
+		datamap_en_memoria=1;
+	}
 
-	blocksmap[offset]|=(1<<shift);
+	dataMap[offset]|=(1<<shift);
 
-	sector=offset/512;
-	vdwriteseclog(mapa_bits_bloques+sector,blocksmap+sector*512);
+	if (vdwritels(dataMapLs(),1,(char *) &dataMap) == -1)
+		return -1;
 	//for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
 	//	vdwriteseclog(mapa_bits_bloques+i,blocksmap+i*512);
 	return(1);
@@ -116,37 +110,32 @@ int unassignblock(int block)
 {
 	int offset=block/8;
 	int shift=block%8;
-	int result;
+
 	char mask;
 	int sector;
 	int i;
 
 	if(!secboot_en_memoria)
 	{
-		result=vdreadsector(0,0,0,1,1,(char *) &secBoot);
+		if (vdreadls(mbrLs(),1,(char *) &secBoot) == -1) //inicializamos sector boot si no existia antes
+			return -1;
 		secboot_en_memoria=1;
 	}
 
-	mapa_bits_bloques= secboot.sec_res+secboot.sec_mapa_bits_nodos_i;
-
-	if(!blocksmap_en_memoria)
+	if(!datamap_en_memoria)
 	{
-		for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
-		 	result=vdreadseclog(mapa_bits_bloques+i,blocksmap+i*512);
-		blocksmap_en_memoria=1;
+		if (vdreadls(dataMapLs(),1, &dataMap) == -1) //inicializamos sector boot si no existia antes
+			return -1;
+		datamap_en_memoria=1;
 	}
 
-	blocksmap[offset]&=(char) ~(1<<shift);
+	dataMap[offset]&=(char) ~(1<<shift);
 
-	sector=offset/512;
-	vdwriteseclog(mapa_bits_bloques+sector,blocksmap+sector*512);
-	// for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
-	//	vdwriteseclog(mapa_bits_bloques+i,blocksmap+i*512);
+	if (vdwritels(dataMapLs(),1,(char *) &dataMap) == -1)
+		return -1;
+
 	return(1);
 }
-
-
-
 
 //*******************************************************************************
 // Lectura y escritura de bloques
@@ -154,35 +143,35 @@ int unassignblock(int block)
 
 int writeblock(int block,char *buffer)
 {
-	int result;
 	int i;
+
 	if(!secboot_en_memoria)
 	{
-		result=vdreadsector(0,0,0,1,1,(char *) &secBoot);
+		if (vdreadls(mbrLs(),1,(char *) &secBoot) == -1) //inicializamos sector boot si no existia antes
+			return -1;
 		secboot_en_memoria=1;
 	}
 
-	inicio_area_datos=secboot.sec_res+secboot.sec_mapa_bits_nodos_i +secboot.sec_mapa_bits_bloques+secboot.sec_tabla_nodos_i;
+	// direccion logica , 1, buffer
+	// si escribiera un sector (block * SECSIZE) + dataBlockLs()
 
+	vdwritels(dataBlockLs()+(block*secBoot.sec_x_bloque* SECSIZE), secBoot.sec_x_bloque, buffer);
+	//vdwritels(dataBlockLs()+((block-1)*secBoot.sec_x_bloque* SECSIZE), secBoot.sec_x_bloque, buffer); // a ver cual es
 
-	for(i=0;i<secboot.sec_x_bloque;i++)
-		vdwriteseclog(inicio_area_datos+(block-1)*secboot.sec_x_bloque+i,buffer+512*i);
 	return(1);	
 }
 
 int readblock(int block,char *buffer)
 {
-	int result;
 	int i;
 
 	if(!secboot_en_memoria)
 	{
-		result=vdreadsector(0,0,0,1,1,(char *) &secBoot);
+		if (vdreadls(mbrLs(),1,(char *) &secBoot) == -1) //inicializamos sector boot si no existia antes
+			return -1;
 		secboot_en_memoria=1;
 	}
-	inicio_area_datos=secboot.sec_res+secboot.sec_mapa_bits_nodos_i+secboot.sec_mapa_bits_bloques+secboot.sec_tabla_nodos_i;
 
-	for(i=0;i<secboot.sec_x_bloque;i++)
-		vdreadseclog(inicio_area_datos+(block-1)*secboot.sec_x_bloque+i,buffer+512*i);
+	vdreadls(dataBlockLs()+(block*secBoot.sec_x_bloque* SECSIZE), secBoot.sec_x_bloque, buffer);
 	return(1);	
 }
