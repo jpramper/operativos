@@ -1,0 +1,33 @@
+1
+  [OK] Creacion del disco virtual
+3
+  3.1
+    [vdformat] Formateo del disco virtual
+    [dumpseclog] modificar el programa ejemplo dumpsec.c para que ahora muestre un sector lógico del disco virtual
+  3.2
+  [...] Funciones de bajo nivel para acceder las estructuras
+
+    [vdisk.h/vdreadls(int sl, int nsecs, char *buffer)] Leer uno o varios sectores en función al número de sector lógico
+    [vdisk.h/vdwritels(int sl, int nsecs, char *buffer)] Escribir uno o varios sectores en función al número de sector lógico
+
+    [logicSectors.h/mbrLs()] Determinar donde inicia el mapa de bits
+    [logicSectors.h/inodeMapLs()] Determinar donde inicia el mapa de bits del área de nodos i
+    [logicSectors.h/dataMapLs()] Determinar donde inicia el mapa de bits del área de datos
+    [logicSectors.h/iNodeLs()] Determinar donde el área de nodos i
+    [logicSectors.h/dataBlockLs()] Determinar donde el área de los archivos
+
+    [iNode.h/nextfreeinode()] Localizar un nodo i disponible
+    [...] Asignar un nodo i - implica marcarlo como no disponible y crear el nodo en la tabla
+
+    [...] Convertir un bloque de datos a sector o grupo de sectores lógicos
+    [dataArea.h/nextfreeblock] Localizar bloques de datos disponibles en función al mapa de bits
+    [...] Asignar bloques de datos - implica marcarlos como no disponibles y asignarlos en el nodo i
+    [dataArea.h/readblock(int block,char *buffer)] Leer bloques de datos en función al número de bloque
+    [dataArea.h/writeblock(int block,char *buffer)] Escribir bloques de datos en función al número de bloque
+
+  3.3
+    [...] Acceso al sistema de archivos en el disco virtual desde las aplicaciones
+
+
+[OK] Creacion del disco virtual
+[OK] Creacion del disco virtual
