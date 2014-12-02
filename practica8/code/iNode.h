@@ -33,8 +33,8 @@ int nextfreeinode()
 {
 	int i,j;
 
-	check_secboot();
-	check_inodesmap();
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	// Recorrer byte por byte mientras sea 0xFF sigo recorriendo
 	// i encuentra el byte (offset)
@@ -64,8 +64,8 @@ int isinodefree(int inode)  //retrun 1 si esta libre
 	int offset=inode/8;
 	int shift=inode%8;
 
-	check_secboot();
-	check_inodesmap();
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	if(iNodesMap[offset] & (1<<shift))
 		return(0);  //no ta libre
@@ -79,8 +79,8 @@ int assigninode(int inode)
 	int offset=inode/8;
 	int shift=inode%8;
 
-	check_secboot();
-	check_inodesmap();
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	iNodesMap[offset]|=(1<<shift);
 	//printf("este es mi iNode que voy a escibir %x\n", iNodesMap );
@@ -95,8 +95,8 @@ int unassigninode(int inode)
 	int offset=inode/8;
 	int shift=inode%8;
 
-	check_secboot();
-	check_inodesmap();
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	iNodesMap[offset]&=(char) ~(1<<shift);
 	if (vdwritels(iNodesMapLs(),1,(char *) &iNodesMap) == -1) //escribimos

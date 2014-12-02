@@ -15,6 +15,7 @@ extern unsigned char dataMap[SECSIZE];
 //////////////////////////////////////////////////////////
 /*Method Declaration Area*/
 //check sector (return ERROR/SUCCESS)
+//all methods include implicit check_secboot()
 int check_secboot();
 int check_inodesmap();
 int check_datamap();

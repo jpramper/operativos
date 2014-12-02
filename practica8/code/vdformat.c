@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "vdisk.c"
+#include "vdisk.h"
 
 int main(int argc,char *argv[])
 {
@@ -20,7 +20,7 @@ int main(int argc,char *argv[])
 	}
 
 	// asignar valores de sector 0 (boot)
-	struct SECBOOT mbr;  // master boot record 
+	struct SECBOOT mbr;  // master boot record
 
 	mbr.jump[0] = 0;
 	mbr.jump[1] = 0;
@@ -31,7 +31,7 @@ int main(int argc,char *argv[])
 		mbr.nombre_disco[i] = 0;
 	strcat(mbr.nombre_disco, argv[1]);
 
-	mbr.sec_res = 0; 
+	mbr.sec_res = 0;
 	mbr.sec_mapa_bits_nodo_i = 1;
 	mbr.sec_mapa_bits_bloques = 2;
 	mbr.sec_tabla_nodos_i = 3;

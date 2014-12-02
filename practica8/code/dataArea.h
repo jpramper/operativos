@@ -19,8 +19,8 @@ int isblockfree(int block);
 int assignblock(int block);
 int unassignblock(int block);
 // Lectura y escritura de bloques
-int writeblock(int block,char *buffer); //TODO untested
-int readblock(int block,char *buffer); //TODO untested
+int writeblock(int block,char *buffer);
+int readblock(int block,char *buffer);
 /**/
 //////////////////////////////////////////////////////////
 
@@ -32,7 +32,7 @@ int nextfreeblock()
 {
 	int i,j;
 
-	if(check_secboot()==ERROR) return ERROR;
+	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_datamap()==ERROR) return ERROR;
 
 	i=0;
@@ -58,7 +58,7 @@ int isblockfree(int block)
 	int offset=block/8;
 	int shift=block%8;
 
-	if(check_secboot()==ERROR) return ERROR;
+	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_datamap()==ERROR) return ERROR;
 
 	if(dataMap[offset] & (1<<shift))
@@ -72,7 +72,7 @@ int assignblock(int block)
 	int offset=block/8;
 	int shift=block%8;
 
-	if(check_secboot()==ERROR) return ERROR;
+	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_datamap()==ERROR) return ERROR;
 
 	dataMap[offset]|=(1<<shift);
@@ -93,7 +93,7 @@ int unassignblock(int block)
 	int sector;
 	int i;
 
-	if(check_secboot()==ERROR) return ERROR;
+	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_datamap()==ERROR) return ERROR;
 
 	dataMap[offset]&=(char) ~(1<<shift);
@@ -112,13 +112,12 @@ int writeblock(int block,char *buffer)
 {
 	int i;
 
-	if(check_secboot()==ERROR) return ERROR;
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_datamap()==ERROR) return ERROR;
 
 	// direccion logica , 1, buffer
 	// si escribiera un sector (block * SECSIZE) + dataBlockLs()
-
-	vdwritels(dataBlockLs()+(block*secBoot.sec_x_bloque* SECSIZE), secBoot.sec_x_bloque, buffer);
-	//vdwritels(dataBlockLs()+((block-1)*secBoot.sec_x_bloque* SECSIZE), secBoot.sec_x_bloque, buffer); // a ver cual es
+	vdwritels(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
 
 	return(1);
 }
@@ -129,6 +128,6 @@ int readblock(int block,char *buffer)
 
 	if(check_secboot()==ERROR) return ERROR;
 
-	vdreadls(dataBlockLs()+(block*secBoot.sec_x_bloque* SECSIZE), secBoot.sec_x_bloque, buffer);
+	vdreadls(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
 	return(1);
 }
