@@ -19,6 +19,7 @@ extern unsigned char dataMap[SECSIZE];
 int check_secboot();
 int check_inodesmap();
 int check_datamap();
+int check_dirraiz();
 //logic sectors
 int secBootLs();//donde inicia el master boot
 int iNodesMapLs();//donde inicia el mapa de bits del area de nodos i
@@ -59,6 +60,19 @@ int check_datamap()
 		if (vdreadls(dataMapLs(),1, &dataMap) == ERROR) //inicializamos sector boot si no existia antes
 			return ERROR;
 		datamap_en_memoria=1;
+	}
+
+	return SUCCESS;
+}
+
+
+int check_dirraiz()
+{
+	if(!dirraiz_en_memoria)
+	{
+		if (vdreadls(iNodeLs(),(dataBlockLs()-iNodeLs()), &dirRaiz) == ERROR) //inicializamos sector boot si no existia antes
+			return ERROR;
+		dirraiz_en_memoria=1;
 	}
 
 	return SUCCESS;

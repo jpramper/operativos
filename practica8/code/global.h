@@ -36,15 +36,6 @@ struct INODE{
 	unsigned short indirect2;
 };
 
-struct DATE {
-	int year;
-	int month;
-	int day;
-	int hour;
-	int min;
-	int sec;
-};
-
 short secboot_en_memoria = 0;  //bandera de sec boot
 struct SECBOOT secBoot;	   // estructura secboot
 

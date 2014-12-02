@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "dataArea.h"
+#include "date.h"
 
 extern short secboot_en_memoria;  // sec boot
 extern struct SECBOOT secBoot;
@@ -114,14 +115,15 @@ int unassigninode(int inode)
 // atribs son los permisos del archivo
 // uid id del usuario dueño deñ archivo
 // gid id del grupo dueño del archivo
-int setninode(int num, char *filename,unsigned short atribs, int uid, int gid)
+int setinode(int num, char *filename,unsigned short atribs, int uid, int gid)
 {
 	/*-----------------TODOOOODOOOODOODOODOO----------------------------*/
 	int i;
 
-	check_secboot();
-	check_inodesmap();
-
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
+	if(check_dirraiz()==ERROR) return ERROR;
+	
 	// se establecen los datos
 	strncpy(dirRaiz[num].name,filename,20);
 	if(strlen(dirRaiz[num].name)>19)
@@ -154,8 +156,8 @@ int searchinode(char *filename)
 	int i;
 	int free;
 
-	check_secboot();
-	check_inodesmap();
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	// Si el nombre del archivo sobrepasa los 19 bytes, truncarlo
 	if(strlen(filename)>19)
@@ -179,7 +181,8 @@ int removeinode(int numinode)
 {
 	int i;
 
-	unsigned short temp[SECSIZE];
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	// Recorrer todos los apuntadores directos del nodo i
 	// Poner en 0 en el mapa de bits de bloque, los bloques asignados.
@@ -209,62 +212,4 @@ int removeinode(int numinode)
 	unassigninode(numinode);
 
 	return(1);
-}
-
-// ******************************************************************************
-// Funciones para el manejo de fechas en los inodos
-// ******************************************************************************
-
-unsigned int datetoint(struct DATE date)
-{
-	unsigned int val=0;
-
-	val=date.year-1970;
-	val<<=4;
-	val|=date.month;
-	val<<=5;
-	val|=date.day;
-	val<<=5;
-	val|=date.hour;
-	val<<=6;
-	val|=date.min;
-	val<<=6;
-	val|=date.sec;
-
-	return(val);
-}
-
-int inttodate(struct DATE *date,unsigned int val)
-{
-	date->sec=val&0x3F;
-	val>>=6;
-	date->min=val&0x3F;
-	val>>=6;
-	date->hour=val&0x1F;
-	val>>=5;
-	date->day=val&0x1F;
-	val>>=5;
-	date->month=val&0x0F;
-	val>>=4;
-	date->year=(val&0x3F) + 1970;
-	return(1);
-}
-
-unsigned int currdatetimetoint()
-{
-	struct tm *tm_ptr;
-	time_t the_time;
-
-	struct DATE now;
-
-	(void) time(&the_time);
-	tm_ptr=gmtime(&the_time);
-
-	now.year=tm_ptr->tm_year-70;
-	now.month=tm_ptr->tm_mon+1;
-	now.day=tm_ptr->tm_mday;
-	now.hour=tm_ptr->tm_hour;
-	now.min=tm_ptr->tm_min;
-	now.sec=tm_ptr->tm_sec;
-	return(datetoint(now));
 }
