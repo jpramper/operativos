@@ -116,7 +116,6 @@ int writeblock(int block,char *buffer)
 	if(check_datamap()==ERROR) return ERROR;
 
 	// direccion logica , 1, buffer
-	// si escribiera un sector (block * SECSIZE) + dataBlockLs()
 	vdwritels(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
 
 	return(1);

@@ -20,6 +20,7 @@ int check_secboot();
 int check_inodesmap();
 int check_datamap();
 int check_dirraiz();
+int check_openfiles();
 //logic sectors
 int secBootLs();//donde inicia el master boot
 int iNodesMapLs();//donde inicia el mapa de bits del area de nodos i
@@ -73,6 +74,23 @@ int check_dirraiz()
 		if (vdreadls(iNodeLs(),(dataBlockLs()-iNodeLs()), &dirRaiz) == ERROR) //inicializamos sector boot si no existia antes
 			return ERROR;
 		dirraiz_en_memoria=1;
+	}
+
+	return SUCCESS;
+}
+
+int check_openfiles()
+{
+	int i;
+
+	if(!openfiles_inicializada)
+	{
+		for(i=3;i<NOPENFILES;i++)
+		{
+			openfiles[i].inuse=0;	// Archivo no está en uso
+			openfiles[i].currbloqueenmemoria=-1; // Ningún bloque
+		}
+		openfiles_inicializada=1;
 	}
 
 	return SUCCESS;

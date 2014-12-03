@@ -74,7 +74,6 @@ int isinodefree(int inode)  //retrun 1 si esta libre
 
 int assigninode(int inode)
 {
-	//printf("esta es mi direccion %x - %d\n", inode, inode);
 	int offset=inode/8;
 	int shift=inode%8;
 
@@ -82,8 +81,8 @@ int assigninode(int inode)
 	if(check_inodesmap()==ERROR) return ERROR;
 
 	iNodesMap[offset]|=(1<<shift);
-	//printf("este es mi iNode que voy a escibir %x\n", iNodesMap );
-	if (vdwritels(iNodesMapLs(),1,(char *) &iNodesMap) == -1) //escribimos
+
+	if (vdwritels(iNodesMapLs(),1,(char *) &iNodesMap) == -1)
 			return -1;
 
 	return(1);
@@ -114,11 +113,11 @@ int setinode(int num, char *filename, unsigned short atribs, int uid, int gid)
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_dirraiz()==ERROR) return ERROR;
-	
+
 	// se establecen los datos
 	strncpy(dirRaiz[num].name,filename,20);
 	if(strlen(dirRaiz[num].name)>19)
-	 	dirRaiz[num].name[19]='\0';
+	 	dirRaiz[num].name[19]='\0';//se trunca
 
 	dirRaiz[num].datetimecreate = currdatetimetoint();
 	dirRaiz[num].datetimemodif = currdatetimetoint();
@@ -127,88 +126,72 @@ int setinode(int num, char *filename, unsigned short atribs, int uid, int gid)
 	dirRaiz[num].perms=atribs;
 	dirRaiz[num].size=0;
 
-	for(i=0;i<BLOCKPTRxINODE;i++)
+	for(i=0;i<DIRECTPTRxINODE;i++)
 		dirRaiz[num].blocks[i]=0;
 
 	dirRaiz[num].indirect=0;
 	dirRaiz[num].indirect2=0;
 
 	// escribe el sector donde se encuentra el inode de dirRaiz[num]
-	for(i=0;i<secBoot.sec_tabla_nodos_i;i++)
-		vdwritels(iNodeLs()+i,1,&dirRaiz[i*8]);
-	// TODO Optimizar @romi
+	int desplazamiento= num * INODESIZE / SECSIZE;
+	vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[num]);
 
 	return(num);
 }
 
 int searchinode(char *filename)
 {
-	int i;
-	//Xint free;
+	int i=0;
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_inodesmap()==ERROR) return ERROR;
 
-	// Si el nombre del archivo sobrepasa los 19 bytes, truncarlo
 	if(strlen(filename)>19)
-	  	filename[19]='\0';
+	  	filename[19]='\0';//se trunca
 
-	// Buscar en toda la tabla de nodos i, el archivo que queremos
-	// encontrar
-	i=0;
+	// Buscar en la tabla de nodos i
 	while(strcmp(dirRaiz[i].name,filename) && i<NINODES)
 		i++;
 
-	// Si i llegó a 64, el archivo buscado no existe, regresar -1 (error)
-	if(i>=NINODES)
-		return(-1);
+	if(i>=NINODES)//si se paso
+		return ERROR;
 
-	return(i);
+	return i;
 }
 
-// Borrar un nodo i de la tabla de nodos i.
 int removeinode(int numinode)
 {
 	int i;
-	unsigned char temp[SECSIZE*SECxBLOCK];
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_inodesmap()==ERROR) return ERROR;
 
-	// se establecen los datos
+	// se borra el nombre el nodo
 	strncpy(dirRaiz[numinode].name,"\0",20);
+	int desplazamiento= numinode * INODESIZE / SECSIZE;
+	vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[numinode]);
 
-	// escribe el sector donde se encuentra el inode de dirRaiz[num]
-	for(i=0;i<secBoot.sec_tabla_nodos_i;i++)
-		vdwritels(iNodeLs()+i,1,&dirRaiz[i*8]);
-	// TODO Optimizar @romi
-
-	// Recorrer todos los apuntadores directos del nodo i
-	// Poner en 0 en el mapa de bits de bloque, los bloques asignados.
-	for(i=0;i<BLOCKPTRxINODE;i++)
+	// se liberan los bloques apuntados directamente
+	for(i=0;i<DIRECTPTRxINODE;i++)
 		if(dirRaiz[numinode].blocks[i]!=0)
 			unassignblock(dirRaiz[numinode].blocks[i]);
 
-	// Si hay bloque indirecto
+	// se liberan los bloques apuntados indirectamente
 	if(dirRaiz[numinode].indirect!=0)
 	{
-		// Leer el bloque el bloque indirecto a memoria
-		readblock(dirRaiz[numinode].indirect, temp);
+		unsigned char indirectBlock[BLOCKSIZE];
+		readblock(dirRaiz[numinode].indirect, indirectBlock);
 
-		// Recorrer todos los apuntadores que contiene el bloque
-		// y poner en 0s su bit correspondiente en el mapa de bits
-		for(i=0;i< (SECSIZE*SECxBLOCK);i++)
-			if(temp[i]!=0)
-				unassignblock(temp[i]);
+		for(i=0;i<BLOCKSIZE;i++)
+			if(indirectBlock[i]!=0)
+				unassignblock(indirectBlock[i]);
 
-		// Desasignar en el mapa de bits el bloque indirecto
-		// es decir, el bloque de apuntadores
 		unassignblock(dirRaiz[numinode].indirect);
 		dirRaiz[numinode].indirect=0;
 	}
-	
+
 	// Desasignar el nodo i, en el mapa de bits
 	unassigninode(numinode);
 
-	return(1);
+	return SUCCESS;
 }

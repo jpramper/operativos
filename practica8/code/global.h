@@ -3,12 +3,25 @@
 #define CYLINDERS 100
 #define SECSIZE 512
 #define SECxBLOCK 4
-#define NINODES SECSIZE / sizeof(struct INODE) * 8
-#define BLOCKPTRxINODE 10
+
+//extra definitions
+#define BLOCKSIZE SECSIZE * SECxBLOCK
+#define INODESIZE sizeof(struct INODE)
+#define NINODES SECSIZE / INODESIZE * 8 //TODO esto debe ser una funcion
+
+#define DIRECTPTRxINODE 10
+#define PTRxBLOCK BLOCKSIZE / sizeof(unsigned short)
 #define NOPENFILES 10
 
 #define ERROR	-1
 #define SUCCESS	1
+
+#define YES	1
+#define NO	0
+
+#define WHENCE_BEG	0
+#define WHENCE_CUR	1
+#define WHENCE_END	2
 
 struct SECBOOT{
 	char jump[4];
@@ -33,7 +46,7 @@ struct INODE{
 	unsigned int datetimecreate;  // fecha de creacion
 	unsigned int datetimemodif; // fecha de modificacion
 	unsigned int size;			// size del archivo en bytes
-	unsigned short blocks[BLOCKPTRxINODE];
+	unsigned short blocks[DIRECTPTRxINODE];
 	unsigned short indirect;
 	unsigned short indirect2;
 };
@@ -43,13 +56,13 @@ struct OPENFILES {
 	unsigned short inode;
 	int currpos;
 	int currbloqueenmemoria;
-	char buffer[2048];
-	unsigned short buffindirect[1024];
+	char buffer[BLOCKSIZE];
+	unsigned short buffindirect[BLOCKSIZE];
 };
 
-// typedef int VDDIR;	
+// typedef int VDDIR;
 
-// struct vddirent 
+// struct vddirent
 // {
 // 	char *d_name;
 // };
@@ -68,6 +81,6 @@ unsigned char dataMap[SECSIZE]; // el mapa de datos
 
 short dirraiz_en_memoria = 0;	//bandera de el mapa de datos
 struct INODE dirRaiz[NINODES]; // directorio raiz de inodos
-// num de inodos que caben en un sector, por 8 sectores
 
-struct OPENFILES openfiles[NOPENFILES]; // directorio raiz de inodos
+short openfiles_inicializada = 0;	//bandera de openfiles
+struct OPENFILES openfiles[NOPENFILES]; // open files
