@@ -21,8 +21,6 @@ int nextfreeinode();
 int isinodefree(int inode);
 int assigninode(int inode);
 int unassigninode(int inode);
-// TODO
-unsigned int currdatetimetoint();
 /**/
 //////////////////////////////////////////////////////////
 
@@ -109,44 +107,36 @@ int unassigninode(int inode)
 // *************************************************************************
 //TODO
 // *************************************************************************
-// Escribir los datos de un archivo en un nodo i específico
-// num es el número de nodo i
-// filename el nombre que va a llevar ese archivo en el nodo i
-// atribs son los permisos del archivo
-// uid id del usuario dueño deñ archivo
-// gid id del grupo dueño del archivo
-int setinode(int num, char *filename,unsigned short atribs, int uid, int gid)
+
+int setinode(int num, char *filename, unsigned short atribs, int uid, int gid)
 {
-	/*-----------------TODOOOODOOOODOODOODOO----------------------------*/
 	int i;
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
-	if(check_inodesmap()==ERROR) return ERROR;
 	if(check_dirraiz()==ERROR) return ERROR;
 	
 	// se establecen los datos
 	strncpy(dirRaiz[num].name,filename,20);
 	if(strlen(dirRaiz[num].name)>19)
 	 	dirRaiz[num].name[19]='\0';
-	dirRaiz[num].datetimecreate=currdatetimetoint();
-	dirRaiz[num].datetimemodif=currdatetimetoint();
+
+	dirRaiz[num].datetimecreate = currdatetimetoint();
+	dirRaiz[num].datetimemodif = currdatetimetoint();
 	dirRaiz[num].uid=uid;
 	dirRaiz[num].gid=gid;
 	dirRaiz[num].perms=atribs;
 	dirRaiz[num].size=0;
 
-	for(i=0;i<10;i++)
+	for(i=0;i<BLOCKPTRxINODE;i++)
 		dirRaiz[num].blocks[i]=0;
 
 	dirRaiz[num].indirect=0;
 	dirRaiz[num].indirect2=0;
 
-	// Optimizar la escritura escribiendo solo el sector lógico que
-	// corresponde al inodo que estamos asignando.
-	// i=num/8;
-	// result=vdwritels(inicio_nodos_i+i,&dirRaiz[i*8]);
+	// escribe el sector donde se encuentra el inode de dirRaiz[num]
 	for(i=0;i<secBoot.sec_tabla_nodos_i;i++)
 		vdwritels(iNodeLs()+i,1,&dirRaiz[i*8]);
+	// TODO Optimizar @romi
 
 	return(num);
 }
@@ -154,7 +144,7 @@ int setinode(int num, char *filename,unsigned short atribs, int uid, int gid)
 int searchinode(char *filename)
 {
 	int i;
-	int free;
+	//Xint free;
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_inodesmap()==ERROR) return ERROR;
@@ -180,13 +170,22 @@ int searchinode(char *filename)
 int removeinode(int numinode)
 {
 	int i;
+	unsigned char temp[SECSIZE*SECxBLOCK];
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_inodesmap()==ERROR) return ERROR;
 
+	// se establecen los datos
+	strncpy(dirRaiz[numinode].name,"\0",20);
+
+	// escribe el sector donde se encuentra el inode de dirRaiz[num]
+	for(i=0;i<secBoot.sec_tabla_nodos_i;i++)
+		vdwritels(iNodeLs()+i,1,&dirRaiz[i*8]);
+	// TODO Optimizar @romi
+
 	// Recorrer todos los apuntadores directos del nodo i
 	// Poner en 0 en el mapa de bits de bloque, los bloques asignados.
-	for(i=0;i<10;i++)
+	for(i=0;i<BLOCKPTRxINODE;i++)
 		if(dirRaiz[numinode].blocks[i]!=0)
 			unassignblock(dirRaiz[numinode].blocks[i]);
 
@@ -194,7 +193,7 @@ int removeinode(int numinode)
 	if(dirRaiz[numinode].indirect!=0)
 	{
 		// Leer el bloque el bloque indirecto a memoria
-		readblock(dirRaiz[numinode].indirect,(char *) temp);
+		readblock(dirRaiz[numinode].indirect, temp);
 
 		// Recorrer todos los apuntadores que contiene el bloque
 		// y poner en 0s su bit correspondiente en el mapa de bits
@@ -207,7 +206,7 @@ int removeinode(int numinode)
 		unassignblock(dirRaiz[numinode].indirect);
 		dirRaiz[numinode].indirect=0;
 	}
-
+	
 	// Desasignar el nodo i, en el mapa de bits
 	unassigninode(numinode);
 

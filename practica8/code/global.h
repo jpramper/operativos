@@ -4,6 +4,8 @@
 #define SECSIZE 512
 #define SECxBLOCK 4
 #define NINODES SECSIZE / sizeof(struct INODE) * 8
+#define BLOCKPTRxINODE 10
+#define NOPENFILES 10
 
 #define ERROR	-1
 #define SUCCESS	1
@@ -31,10 +33,29 @@ struct INODE{
 	unsigned int datetimecreate;  // fecha de creacion
 	unsigned int datetimemodif; // fecha de modificacion
 	unsigned int size;			// size del archivo en bytes
-	unsigned short blocks[10];
+	unsigned short blocks[BLOCKPTRxINODE];
 	unsigned short indirect;
 	unsigned short indirect2;
 };
+
+struct OPENFILES {
+	int inuse;
+	unsigned short inode;
+	int currpos;
+	int currbloqueenmemoria;
+	char buffer[2048];
+	unsigned short buffindirect[1024];
+};
+
+// typedef int VDDIR;	
+
+// struct vddirent 
+// {
+// 	char *d_name;
+// };
+
+// struct vddirent *vdreaddir(VDDIR *dirdesc);
+// VDDIR *vdopendir(char *path);
 
 short secboot_en_memoria = 0;  //bandera de sec boot
 struct SECBOOT secBoot;	   // estructura secboot
@@ -48,3 +69,5 @@ unsigned char dataMap[SECSIZE]; // el mapa de datos
 short dirraiz_en_memoria = 0;	//bandera de el mapa de datos
 struct INODE dirRaiz[NINODES]; // directorio raiz de inodos
 // num de inodos que caben en un sector, por 8 sectores
+
+struct OPENFILES openfiles[NOPENFILES]; // directorio raiz de inodos

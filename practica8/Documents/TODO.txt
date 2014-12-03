@@ -26,7 +26,35 @@
     [dataArea.h/writeblock(int block,char *buffer)] Escribir bloques de datos en función al número de bloque
 
   3.3
-    [...] Acceso al sistema de archivos en el disco virtual desde las aplicaciones
+    Acceso al sistema de archivos en el disco virtual desde las aplicaciones
+
+    [...] vdcreat Crea un archivo nuevo en el disco virtual (queda abierto)
+
+    [...] vdopen: abrir un archivo de la imagen, buscar en el directorio si el archivo existe, si es 
+    así ponerlo en una tabla de archivos abiertos que será necesario definir en esta parte
+    y regresar el descriptor del archivo. A esta función se le pasará como parámetro el 
+    nombre del archivo y el modo en el que lo vamos a abrir (read only, read/write).
+
+    [...] vdread: leer datos a partir de donde está el apuntador al archivo previamente abierto 
+    con la función vdopen. A esta función se le debe de indicar como parámetros, el 
+    descriptor del archivo abierto, el buffer donde va a guardar lo que lee del archivo y la 
+    cantidad de bytes a leer.
+
+    [...]vdwrite: escribir los datos al archivo que previamente fue abierto con la función open. 
+    A está función se le debe de indicar como parámetros, el descriptor del archivo abierto, el 
+    buffer donde está lo que va a escribir al archivo y la cantidad de bytes a escribir.Sistemas de Archivos.
+
+    [...]vdseek: posicionarse en una parte específica del archivo. A esta función se le debe de 
+    indicar como parámetros, el descriptor del archivo abierto, la cantidad de bytes a 
+    desplazarse y el desplazamiento a partir de donde va a ser, ya sea desde el inicio, el lugar 
+    donde se encuentra el apuntador del archivo o a partir del final.
+    
+    [...] vdclose: cerrar un archivo, eliminarlo de la tabla de archivos abiertos. Solo va a recibir 
+    como parámetro el descriptor del archivo a cerrar.
+    
+    [...] vdunlink: borra un archivo del directorio raíz del disco virtual. Solo va a recibir como 
+    parámetro el nombre del archivo a eliminar.
+
 
 
 [OK] Creacion del disco virtual

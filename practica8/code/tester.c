@@ -4,13 +4,15 @@ void test_logicsectors();
 void test_assigninode();
 void test_assignblock();
 void test_writeblock();
+void test_setinode();
 
 int main()
 {
-	test_logicsectors();
-	test_assigninode();
+	//test_logicsectors();
+	//test_assigninode();
 	//test_assignblock();
-	test_writeblock();
+	//test_writeblock();
+	test_setinode();
 
 	return 0;
 }
@@ -92,7 +94,7 @@ void test_writeblock()
 	printf("bloque asignado: %d\n", block);
 	assignblock(block);
 
-	unsigned char buffer[SECSIZE*4];
+	unsigned char buffer[SECSIZE*SECxBLOCK];
 
 	int i;
 	for (i = 0; i < SECSIZE*4; i++)
@@ -108,9 +110,43 @@ void test_writeblock()
 	printf("segundo bloque asignado: %d\n", block2);
 	assignblock(block2);
 
-	unsigned char buffer2[SECSIZE*4];
+	unsigned char buffer2[SECSIZE*SECxBLOCK];
 
 	readblock(block,buffer2);
 	writeblock(block2,buffer2);
+
+}
+
+void test_setinode()
+{
+	printf("\n\n--------------------\n");
+	printf("setinode test\n");
+	printf("--------------------\n\n");
+
+	assigninode(nextfreeinode());
+	assigninode(nextfreeinode());
+	assigninode(nextfreeinode());
+	assigninode(nextfreeinode());
+
+	int i = nextfreeinode();
+	printf("inodo asignado: %d\n", i);
+	assigninode(i);
+
+	printf("esta libre? %d\n", isinodefree(i));
+
+	printf("nodo establecido: %d\n", i);
+	setinode(i, "archivo1", 1, 2, 3);
+
+	printf("buscando inodo con nombre 'archivo1'\n");
+	int j = searchinode("archivo1");
+
+	printf("encontrado = %d\n", j);
+
+	printf("removed %d\n", i);
+	removeinode(i);
+	int s = searchinode("archivo1");
+	printf("encontrado = %d\n", s);
+
+	printf("esta libre? %d\n", isinodefree(s));
 
 }
