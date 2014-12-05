@@ -134,7 +134,14 @@ int setinode(int num, char *filename, unsigned short atribs, int uid, int gid)
 
 	// escribe el sector donde se encuentra el inode de dirRaiz[num]
 	int desplazamiento= num * INODESIZE / SECSIZE;
-	vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[num]);
+	printf("desplazamiento :%d\n", desplazamiento);
+	printf("num :%d\n", num);
+	printf("INODESIZE :%d\n", INODESIZE);
+	printf("SECSIZE :%d\n", SECSIZE);
+	vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[num/ INODESIZE / SECSIZE]); // HACER ALGO AQUI ESE : dirRaiz[num ****]
+	printf("descuadre (sec log donde se guarda, sabes?) : %d\n", iNodeLs()+desplazamiento);
+	printf("escrito: %s\n", dirRaiz[num].name);
+	// ke ase, falta un paso o que ase
 
 	return(num);
 }

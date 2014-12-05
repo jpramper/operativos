@@ -1,10 +1,12 @@
-#include "iNode.h"
+//#include "iNode.h"
+#include "filesystem.h"
 
 void test_logicsectors();
 void test_assigninode();
 void test_assignblock();
 void test_writeblock();
 void test_setinode();
+void test_vdcreate();
 
 int main()
 {
@@ -13,6 +15,8 @@ int main()
 	//test_assignblock();
 	//test_writeblock();
 	test_setinode();
+	//test_vdcreate();
+
 
 	return 0;
 }
@@ -137,10 +141,33 @@ void test_setinode()
 	printf("nodo establecido: %d\n", i);
 	setinode(i, "archivo1", 1, 2, 3);
 
-	printf("buscando inodo con nombre 'archivo1'\n");
-	int j = searchinode("archivo1");
-
-	printf("encontrado = %d\n", j);
+	int j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo2", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo3", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo4", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo5", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo6", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo7", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo8", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo9", 1, 2, 3);
+	j = nextfreeinode();
+	assigninode(j);
+	setinode(j, "archivo10", 1, 2, 3);
 
 	printf("removed %d\n", i);
 	removeinode(i);
@@ -149,4 +176,23 @@ void test_setinode()
 
 	printf("esta libre? %d\n", isinodefree(s));
 
+}
+
+void test_vdcreate()
+{
+	printf("\n\n--------------------\n");
+	printf("vdcreat test\n");
+	printf("--------------------\n\n");
+	char *filename = "fisher price";
+	char *filename2 = "huevit";
+	char *filename3 = "el gran sayaman!";
+	unsigned short perms = 1;
+
+	int fd;
+	fd = vdcreat(filename,perms);
+	printf("este es nuestro nuevo fd: %d\n",fd);
+	fd = vdcreat(filename3,perms);
+	printf("este es nuestro nuevo fd: %d\n",fd);
+	fd = vdcreat(filename2,perms);
+	printf("este es nuestro nuevo fd: %d\n",fd);
 }
