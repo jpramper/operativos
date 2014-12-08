@@ -16,7 +16,7 @@ int main()
  	printf("File System v0.1\n");
  	printf(".....@Espinosa Romina\n");
  	printf(".....@Ramirez Juan\n");
- 	printf(".....@Rojas Ivan\n");
+ 	printf(".....@Rojas Ivan (el Q)\n");
 	char linea[MAXLEN];
 	int result=1;
 

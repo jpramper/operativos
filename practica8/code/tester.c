@@ -9,7 +9,7 @@ void test_assignblock();
 void test_writeblock();
 void test_setinode();
 void test_vdcreate();
-void test_vdwrite();
+void test_vdwrite_y_vdread();
 
 int main()
 {
@@ -23,24 +23,18 @@ int main()
 	//test_writeblock();
 	//test_setinode();
 	//test_vdcreate();
-	test_vdwrite();
+	test_vdwrite_y_vdread();
 
 	printf("sector logico 3\n");
 	system("./dumpseclog 3");
 
-	printf("sector logico 4\n");
-	system("./dumpseclog 4");
-
 	printf("sector logico 11\n");
-	system("./dumpseclog 11");
-
-	printf("sector logico 12\n");
-	system("./dumpseclog 12");
+	system("./dumpseclog 15");
 
 	return 0;
 }
 
-void test_vdwrite()
+void test_vdwrite_y_vdread()
 {
 	// crea el archivo
 	printf("\n\n--------------------\n");
@@ -53,7 +47,17 @@ void test_vdwrite()
 	fd = vdcreat(filename,perms);
 	printf("este es nuestro nuevo fd: %d\n",fd);
 
-	vdwrite(fd, "Duna puerca pescuesicrespa", 25);
+	vdwrite(fd, "Duna puerca pescuesicrespa", 26);
+
+	vdclose(fd);
+
+	fd = vdopen("omg so write", 1);
+
+	char buf2[27]; 
+
+	vdread(fd, buf2, 26);
+	buf2[26] = '\0';
+	printf("LEIMOS OOOOOOOOOH: %s\n",buf2);
 
 	vdclose(fd);
 }

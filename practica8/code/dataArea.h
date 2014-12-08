@@ -113,17 +113,17 @@ int writeblock(int block,char *buffer)
 	if(check_datamap()==ERROR) return ERROR;
 
 	// direccion logica , 1, buffer
-	printf("dato que escribe vdwritels (PRE): %s\n", buffer);
+	//printf("dato que escribe vdwritels (PRE): %s\n", buffer);
 	vdwritels(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
-	printf("SL donde escribe vdwritels: %d\n", dataBlockLs()+(block*secBoot.sec_x_bloque));
-	printf("dato que escribe vdwritels (copa) (romi anda de fiesta): %s\n", buffer);
+	// printf("SL donde escribe vdwritels: %d\n", dataBlockLs()+(block*secBoot.sec_x_bloque));
+	// printf("dato que escribe vdwritels (copa) (romi anda de fiesta): %s\n", buffer);
 	return SUCCESS;
 }
 
 int readblock(int block,char *buffer)
 {
 	if(check_secboot()==ERROR) return ERROR;
-	printf("dato que escribe readblock (=D): %s\n", buffer);
+	//printf("dato que escribe readblock (=D): %s\n", buffer);
 
 	vdreadls(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
 	return SUCCESS;

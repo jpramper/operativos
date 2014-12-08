@@ -287,6 +287,7 @@ int vdwrite(int fd, char *buffer, int bytes)
 		// Incrementa el contador
 		cont++;
 	}
+	//printf("size del archivo es (terminando write )%d \n", dirRaiz[openfiles[fd].inode].size );
 
 	return(cont);
 }
@@ -295,6 +296,7 @@ int vdwrite(int fd, char *buffer, int bytes)
 // Debe retornar cuantos caracteres fueron leídos
 int vdread(int fd, char *buffer, int bytes)
 {
+	//printf("size del archivo es (empezando read) %d \n", dirRaiz[openfiles[fd].inode].size );
 	// revisar archivos aviertos
 	check_openfiles();
 	if(openfiles[fd].inuse==NO)
@@ -308,6 +310,10 @@ int vdread(int fd, char *buffer, int bytes)
 	unsigned short *currptr;
 
 	// mientras hayan bytes por leer, y si la posición es menor que el tamaño
+	// printf("\ncont : %d\n", cont);
+	// printf("ytes : %d\n", bytes);
+	// printf("currpos : %d\n", openfiles[fd].currpos);
+	// printf("size : %d\n", dirRaiz[currinode].size);
 	while(cont < bytes && openfiles[fd].currpos < dirRaiz[currinode].size)
 	{
 		// busca la siguiente posición del apuntador del archivo
@@ -317,13 +323,12 @@ int vdread(int fd, char *buffer, int bytes)
 
 		// El contenido de la dirección currptr es el número de bloque
 		currblock=*currptr;
-
 		// Si el bloque de la posición actual no está en memoria
 		// Lee el bloque al buffer del archivo
 		if(openfiles[fd].currbloqueenmemoria!=currblock)
 		{
 			readblock(currblock,openfiles[fd].buffer); // lee del fisico a memoria
-			readblock(currblock,buffer); // lee del fisico al buffer
+			//readblock(currblock,buffer); // lee del fisico al buffer
 			openfiles[fd].currbloqueenmemoria=currblock;
 		}
 
@@ -346,6 +351,7 @@ int vdread(int fd, char *buffer, int bytes)
 // Si hay bloques de datos que se quedaron a medias en memoria, Escribirlos
 int vdclose(int fd)
 {
+
 	check_openfiles();
 	if(openfiles[fd].inuse==NO)
 		return ERROR;
@@ -353,15 +359,10 @@ int vdclose(int fd)
 	int currinode=openfiles[fd].inode;
 
 	int currblock;
-
+	//printf("size del archivo es (en close) %d \n", dirRaiz[openfiles[fd].inode].size );
 	// actualizar nodos i
 	// ---------------------------------------------------------
 	assigninode(openfiles[fd].inode);
-	setinode(openfiles[fd].inode,
-			 		dirRaiz[openfiles[fd].inode].name,
-			 		dirRaiz[openfiles[fd].inode].perms,
-			 		dirRaiz[openfiles[fd].inode].uid,
-			 		dirRaiz[openfiles[fd].inode].gid);
 
 	// escritura de bloques
 	//---------------------------------------------
@@ -371,6 +372,7 @@ int vdclose(int fd)
 
 	// quitar el archivo de la tabla de archivos abiertos
 	openfiles[fd].inuse = NO;
+
 
 	return SUCCESS;
 }
