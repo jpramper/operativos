@@ -6,7 +6,6 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include "filesystem.h"
 
 void locateend(char *cmd);
@@ -14,8 +13,13 @@ int executecmd(char *cmd);
 
 int main()
 {
+ 	printf("File System v0.1\n");
+ 	printf(".....@Espinosa Romina\n");
+ 	printf(".....@Ramirez Juan\n");
+ 	printf(".....@Rojas Ivan\n");
 	char linea[MAXLEN];
 	int result=1;
+
 	while(result)
 	{
 		printf("vshell > ");
@@ -26,7 +30,6 @@ int main()
 
 		printf("resutl: %d\n", result );
 	} 
-
 }
 void locateend(char *linea)
 {
@@ -74,7 +77,18 @@ int executecmd(char *linea)
 			catv(arg1);
 		else
 			catu(&arg1[2]);
-	return 1;
+		
+		return 1;
+	}
+// comando "delete"
+	if(strcmp(cmd,"delete")==0)
+	{
+		if(isinvd(arg1))
+			catv(arg1);
+		else
+			catu(&arg1[2]);
+		
+		return 1;
 	}
 // comando dir
 	if(strcmp(cmd,"dir")==0)
@@ -224,4 +238,15 @@ int dirv()
 	while((entry=vdreaddir(dd))!=NULL)
 		printf("%s\n",entry->d_name);
 	vdclosedir(dd);
+}
+
+int deleteu(char *arg1)
+{
+	return unlink(arg1);
+}
+
+int deletev(char *arg1)
+{
+	return uvdunlink(arg1);
+
 }
