@@ -6,10 +6,12 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "filesystem.h"
 #define MAXLEN 80
 #define BUFFERSIZE 512
 void locateend(char *cmd);
 int executecmd(char *cmd);
+
 int main()
 {
 	char linea[MAXLEN];
@@ -21,6 +23,8 @@ int main()
 		read(0,linea,80);
 		locateend(linea);
 		result=executecmd(linea);
+
+		printf("resutl: %d\n", result );
 	} 
 }
 void locateend(char *linea)
@@ -60,6 +64,7 @@ int executecmd(char *linea)
 			copyvu(arg1,&arg2[2]);
 		else if(isinvd(arg1) && isinvd(arg2))
 			copyvv(arg1,arg2);
+	return 1;
 	}
 // comando "cat"
 	if(strcmp(cmd,"cat")==0)
@@ -68,6 +73,7 @@ int executecmd(char *linea)
 			catv(arg1);
 		else
 			catu(&arg1[2]);
+	return 1;
 	}
 // comando dir
 	if(strcmp(cmd,"dir")==0)
@@ -76,6 +82,7 @@ int executecmd(char *linea)
 			dirv();
 		else if(!isinvd(arg1))
 			diru(&arg1[2]);
+		return 1;
 	}
 }
 /* Regresa verdadero si el nombre del archivo no comienza con // y por lo 
@@ -164,11 +171,10 @@ int catv(char *arg1)
 	sfile=vdopen(arg1,0);
 	do {
 		ncars=vdread(sfile,buffer,BUFFERSIZE);
-write(1,buffer,ncars); // Escribe en el archivo de salida 
-estandard
-} while(ncars==BUFFERSIZE);
-vdclose(sfile);
-return(1);
+		write(1,buffer,ncars); // Escribe en el archivo de salida estandard
+	} while(ncars==BUFFERSIZE);
+	vdclose(sfile);
+	return(1);
 }
 /* Despliega un archivo del sistema de archivos de UNIX a pantalla */
 int catu(char *arg1)
@@ -179,11 +185,10 @@ int catu(char *arg1)
 	sfile=open(arg1,0);
 	do {
 		ncars=read(sfile,buffer,BUFFERSIZE);
-write(1,buffer,ncars); // Escribe en el archivo de salida 
-estandard
-} while(ncars==BUFFERSIZE);
-close(sfile);
-return(1);
+		write(1,buffer,ncars); // Escribe en el archivo de salida estandard
+	} while(ncars==BUFFERSIZE);
+	close(sfile);
+	return(1);
 }
 /* Muestra el directorio en el sistema de archivosd de UNIX */
 int diru(char *arg1)
