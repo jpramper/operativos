@@ -83,17 +83,17 @@ int vdcreat(char *filename,unsigned short perms)
 	//si el archivo existe, libera su inode, sino, le asigna uno
 	int numinode=searchinode(filename);
 
-	printf("inode buscado: %d\n", numinode);
+	//printf("inode buscado: %d\n", numinode);
 	if(numinode==-1)
 	{
 		numinode=nextfreeinode();
-		printf("inode libre siguiente: %d\n", numinode);
+		//printf("inode libre siguiente: %d\n", numinode);
 		if(numinode==-1)
 			return ERROR;
 	}
 	else {
 		removeinode(numinode);
-		printf("inode quitado: %d\n", numinode);
+		//printf("inode quitado: %d\n", numinode);
 	}
 
 	assigninode(numinode);
@@ -111,7 +111,7 @@ int vdcreat(char *filename,unsigned short perms)
 	if(fd>=NOPENFILES)
 		return ERROR;
 
-	printf("lugar en openfiles encontrado: %d\n", fd);
+	//printf("lugar en openfiles encontrado: %d\n", fd);
 
 	openfiles[fd].inuse=1;
 	openfiles[fd].inode=numinode;
@@ -247,29 +247,31 @@ int vdwrite(int fd, char *buffer, int bytes)
 			// El bloque encontrado ponerlo en donde
 			// apunta el apuntador al bloque actual
 			*currptr=currblock;
-
 			// Poner el bloque encontrado como ocupado
 			assignblock(currblock);
 
 			// Escribir el sector de la tabla de nodos i
 			// En el disco
 			int desplazamiento= currinode * INODESIZE / SECSIZE;//@romi mode
-			vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[currinode]);
+			vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[currinode/ INODESIZE / SECSIZE]);
 			//sector=(currinode/8)*8;//@deprecated
 			//result=vdwriteseclog(inicio_nodos_i+sector,&inode[sector*8]);
 		}
+
+		//printf("asdf current block %d\n", currblock);
 
 		// Si el bloque de la posición actual no está en memoria
 		// Lee el bloque al buffer del archivo
 		if(openfiles[fd].currbloqueenmemoria!=currblock)
 		{
+			//printf("dato que se envia a readblock (=P): %s\n", openfiles[fd].buffer);
 			readblock(currblock,openfiles[fd].buffer);
 			openfiles[fd].currbloqueenmemoria=currblock;
 		}
 
 		// Copia el caracter del buffer que se recibe como argumento
 		// al buffer de la tabla de archivos abiertos
-		openfiles[fd].buffer[openfiles[fd].currpos%BLOCKSIZE]=buffer[cont];
+		openfiles[fd].buffer[openfiles[fd].currpos%BLOCKSIZE]=buffer[cont];//@tested
 
 		// Incrementa posición
 		openfiles[fd].currpos++;
@@ -278,13 +280,12 @@ int vdwrite(int fd, char *buffer, int bytes)
 		if(openfiles[fd].currpos>dirRaiz[currinode].size)
 			dirRaiz[openfiles[fd].inode].size=openfiles[fd].currpos;
 
-		// Incrementa el contador
-		cont++;
-
 		// Si se llena el buffer, escríbelo
 		if(openfiles[fd].currpos%BLOCKSIZE==0)
 			writeblock(currblock,openfiles[fd].buffer);
 
+		// Incrementa el contador
+		cont++;
 	}
 
 	return(cont);
@@ -366,12 +367,7 @@ int vdclose(int fd)
 	//---------------------------------------------
 	// si no termino en un bloque completo, escribe
 	if(openfiles[fd].currpos%BLOCKSIZE!=0)
-	{
-		// Buscar en el mapa de bits el siguiente bloque libre
-		currblock=nextfreeblock();
-
-		writeblock(currblock,openfiles[fd].buffer);
-	}
+			writeblock(openfiles[fd].currbloqueenmemoria,openfiles[fd].buffer);
 
 	// quitar el archivo de la tabla de archivos abiertos
 	openfiles[fd].inuse = NO;

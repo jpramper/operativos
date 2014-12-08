@@ -176,7 +176,8 @@ int removeinode(int numinode)
 	// se borra el nombre el nodo
 	strncpy(dirRaiz[numinode].name,"\0",20);
 	int desplazamiento= numinode * INODESIZE / SECSIZE;
-	vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[numinode]);
+	vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[numinode/ INODESIZE / SECSIZE]);
+	//vdwritels(iNodeLs()+desplazamiento,1,&dirRaiz[numinode]);
 
 	// se liberan los bloques apuntados directamente
 	for(i=0;i<DIRECTPTRxINODE;i++)

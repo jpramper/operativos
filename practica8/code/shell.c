@@ -247,6 +247,6 @@ int deleteu(char *arg1)
 
 int deletev(char *arg1)
 {
-	return uvdunlink(arg1);
+	return vdunlink(arg1);
 
 }

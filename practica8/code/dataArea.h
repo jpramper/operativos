@@ -64,7 +64,7 @@ int isblockfree(int block)
 	if(dataMap[offset] & (1<<shift))
 		return(0);
 
-	return(1);
+	return SUCCESS;
 }
 
 int assignblock(int block)
@@ -81,7 +81,7 @@ int assignblock(int block)
 		return -1;
 	//for(i=0;i<secboot.sec_mapa_bits_bloques;i++)
 	//	vdwriteseclog(mapa_bits_bloques+i,blocksmap+i*512);
-	return(1);
+	return SUCCESS;
 }
 
 int unassignblock(int block)
@@ -91,7 +91,6 @@ int unassignblock(int block)
 
 	char mask;
 	int sector;
-	int i;
 
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_datamap()==ERROR) return ERROR;
@@ -101,7 +100,7 @@ int unassignblock(int block)
 	if (vdwritels(dataMapLs(),1,(char *) &dataMap) == -1)
 		return -1;
 
-	return(1);
+	return SUCCESS;
 }
 
 //*******************************************************************************
@@ -110,23 +109,22 @@ int unassignblock(int block)
 
 int writeblock(int block,char *buffer)
 {
-	int i;
-
 	//if(check_secboot()==ERROR) return ERROR; implicit
 	if(check_datamap()==ERROR) return ERROR;
 
 	// direccion logica , 1, buffer
+	printf("dato que escribe vdwritels (PRE): %s\n", buffer);
 	vdwritels(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
-
-	return(1);
+	printf("SL donde escribe vdwritels: %d\n", dataBlockLs()+(block*secBoot.sec_x_bloque));
+	printf("dato que escribe vdwritels (copa) (romi anda de fiesta): %s\n", buffer);
+	return SUCCESS;
 }
 
 int readblock(int block,char *buffer)
 {
-	int i;
-
 	if(check_secboot()==ERROR) return ERROR;
+	printf("dato que escribe readblock (=D): %s\n", buffer);
 
 	vdreadls(dataBlockLs()+(block*secBoot.sec_x_bloque), secBoot.sec_x_bloque, buffer);
-	return(1);
+	return SUCCESS;
 }
