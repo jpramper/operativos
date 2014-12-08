@@ -28,6 +28,12 @@ int vdclose();//TODO check
 /**/
 //////////////////////////////////////////////////////////
 
+struct vddirent *vdreaddir(VDDIR *dirdesc);
+VDDIR *vdopendir(char *path);
+
+VDDIR dirs[2]={-1,-1};
+struct vddirent dirActual;
+
 // ***************************************************************
 // Funciones auxiliares en el manejo de archivos
 // ***************************************************************
@@ -160,6 +166,8 @@ int vdunlink(char *filename)
 		return ERROR;
 
 	removeinode(numinode);
+
+	return SUCCESS;
 }
 
 int vdseek(int fd, int offset, int whence)
@@ -209,7 +217,6 @@ int vdseek(int fd, int offset, int whence)
 // 	fd = Descriptor del archivo que nos devolvió vdcreat o vdopen
 //	buffer = Dirección de memoria donde están los datos a escribir
 //	bytes = Cuántos bytes voy a escribir
-
 int vdwrite(int fd, char *buffer, int bytes)
 {
 	check_openfiles();
@@ -283,48 +290,105 @@ int vdwrite(int fd, char *buffer, int bytes)
 	return(cont);
 }
 
-/*
+// Les toca hacerla a ustedes
+// Debe retornar cuantos caracteres fueron leídos
 int vdread(int fd, char *buffer, int bytes)
 {
-	// Les toca hacerla a ustedes
-	// Debe retornar cuantos caracteres fueron leídos
+	// revisar archivos aviertos
+	check_openfiles();
+	if(openfiles[fd].inuse==NO)
+		return ERROR;
+
+	// inicializar estados
+	int currinode=openfiles[fd].inode;
+	int currblock;
+	int cont=0;
+	int sector;
+	unsigned short *currptr;
+
+	// mientras hayan bytes por leer, y si la posición es menor que el tamaño
+	while(cont < bytes && openfiles[fd].currpos < dirRaiz[currinode].size)
+	{
+		// busca la siguiente posición del apuntador del archivo
+		currptr=currpostoptr(fd);
+		if(currptr==NULL)
+			return ERROR;
+
+		// El contenido de la dirección currptr es el número de bloque
+		currblock=*currptr;
+
+		// Si el bloque de la posición actual no está en memoria
+		// Lee el bloque al buffer del archivo
+		if(openfiles[fd].currbloqueenmemoria!=currblock)
+		{
+			readblock(currblock,openfiles[fd].buffer); // lee del fisico a memoria
+			readblock(currblock,buffer); // lee del fisico al buffer
+			openfiles[fd].currbloqueenmemoria=currblock;
+		}
+
+		// Copia el caracter del buffer de la tabla de archivos abiertos
+		// al buffer que se recibe como argumento
+		buffer[cont] = openfiles[fd].buffer[openfiles[fd].currpos%BLOCKSIZE];
+
+		// Incrementa posición
+		openfiles[fd].currpos++;
+
+		// Incrementa el contador
+		cont++;
+	}
+
+	return(cont);
 }
 
-
+// Les toca hacerla a ustedes
+// Actualizar los nodos-i en disco con respecto al nodo i en memoria
+// Si hay bloques de datos que se quedaron a medias en memoria, Escribirlos
 int vdclose(int fd)
 {
-	// Les toca hacerla a ustedes
-	// Actualizar los nodos-i en disco con respecto al nodo i en memoria
-	// Si hay bloques de datos que se quedaron a medias en memoria
-	// Escribirlos
+	check_openfiles();
+	if(openfiles[fd].inuse==NO)
+		return ERROR;
+
+	int currinode=openfiles[fd].inode;
+
+	int currblock;
+
+	// actualizar nodos i
+	// ---------------------------------------------------------
+	assigninode(openfiles[fd].inode);
+	setinode(openfiles[fd].inode,
+			 		dirRaiz[openfiles[fd].inode].name,
+			 		dirRaiz[openfiles[fd].inode].perms,
+			 		dirRaiz[openfiles[fd].inode].uid,
+			 		dirRaiz[openfiles[fd].inode].gid);
+
+	// escritura de bloques
+	//---------------------------------------------
+	// si no termino en un bloque completo, escribe
+	if(openfiles[fd].currpos%BLOCKSIZE!=0)
+	{
+		// Buscar en el mapa de bits el siguiente bloque libre
+		currblock=nextfreeblock();
+
+		writeblock(currblock,openfiles[fd].buffer);
+	}
+
+	// quitar el archivo de la tabla de archivos abiertos
+	openfiles[fd].inuse = NO;
+
+	return SUCCESS;
 }
 
-/*************************************************************
-/* Manejo de directorios
- *************************************************************
-VDDIR dirs[2]={-1,-1};
-struct vddirent current;
-
+//*************************************************************
+//* Manejo de directorios
+// *************************************************************
 
 VDDIR *vdopendir(char *path)
 {
 	int i=0;
-	int result;
 
-	if(!secboot_en_memoria)
-	{
-		result=vdreadsector(0,0,0,1,1,(char *) &secboot);
-		secboot_en_memoria=1;
-	}
-	inicio_nodos_i=secboot.sec_res+secboot.sec_mapa_bits_nodos_i+secboot.sec_mapa_bits_bloques;
-
-	if(!nodos_i_en_memoria)
-	{
-		for(i=0;i<secboot.sec_tabla_nodos_i;i++)
-			result=vdreadseclog(inicio_nodos_i+i,&inode[i*8]);
-
-		nodos_i_en_memoria=1;
-	}
+	//if(check_secboot()==ERROR) return ERROR; implicit
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	if(strcmp(path,".")!=0)
 		return(NULL);
@@ -345,40 +409,24 @@ struct vddirent *vdreaddir(VDDIR *dirdesc)
 {
 	int i;
 
-	int result;
-	if(!nodos_i_en_memoria)
-	{
-		for(i=0;i<secboot.sec_tabla_nodos_i;i++)
-			result=vdreadseclog(inicio_nodos_i+i,&inode[i*8]);
-
-		nodos_i_en_memoria=1;
-	}
+	if(check_inodesmap()==ERROR) return ERROR;
 
 	// Mientras no haya nodo i, avanza
 	while(isinodefree(*dirdesc) && *dirdesc<4096)
 		(*dirdesc)++;
 
-
 	// Apunta a donde está el nombre en el inodo
-	current.d_name=inode[*dirdesc].name;
+	dirActual.d_name = dirRaiz[*dirdesc].name;
 
 	(*dirdesc)++;
 
 	if(*dirdesc>=4096)
 		return(NULL);
-	return( &current);
+
+	return(&dirActual);
 }
 
 int vdclosedir(VDDIR *dirdesc)
 {
 	(*dirdesc)=-1;
-}*/
-
-// int main()
-// {
-// 	printf("File System v0.1\n");
-// 	printf(".....@Espinosa Romina\n");
-// 	printf(".....@Ramirez Juan\n");
-// 	printf(".....@Rojas Ivan\n");
-// 	return 0;
-// }
+}

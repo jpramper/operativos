@@ -1,4 +1,6 @@
-//#include "iNode.h"
+
+#include <unistd.h> // manejo de archivos
+
 #include "filesystem.h"
 
 void test_logicsectors();
@@ -7,18 +9,50 @@ void test_assignblock();
 void test_writeblock();
 void test_setinode();
 void test_vdcreate();
+void test_vdwrite();
 
 int main()
 {
+	unlink("disco0.vd");
+	system("./createvd 0");
+	system("./vdformat 0");
+
 	//test_logicsectors();
 	//test_assigninode();
 	//test_assignblock();
 	//test_writeblock();
-	test_setinode();
+	//test_setinode();
 	//test_vdcreate();
+	test_vdwrite();
 
+	system("./dumpseclog 3");
+	system("./dumpseclog 4");
+	system("./dumpseclog 5");
+	system("./dumpseclog 6");
+	system("./dumpseclog 7");
+	system("./dumpseclog 8");
+	system("./dumpseclog 9");
+	system("./dumpseclog 10");
 
 	return 0;
+}
+
+void test_vdwrite()
+{
+	// crea el archivo
+	printf("\n\n--------------------\n");
+	printf("vdwrite test\n");
+	printf("--------------------\n\n");
+	char *filename = "omg so write";
+	unsigned short perms = 1;
+
+	int fd;
+	fd = vdcreat(filename,perms);
+	printf("este es nuestro nuevo fd: %d\n",fd);
+
+	vdwrite(fd, "una puerca pescuesicrespa", 25);
+
+	vdclose(fd);
 }
 
 // *************************************************************************

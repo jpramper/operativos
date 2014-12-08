@@ -5,7 +5,7 @@
 #define SECxBLOCK 4
 
 //extra definitions
-#define BLOCKSIZE SECSIZE * SECxBLOCK
+#define BLOCKSIZE SECSIZE * SECxBLOCK // 2048
 #define INODESIZE sizeof(struct INODE)
 #define NINODES SECSIZE / INODESIZE * 8 //TODO esto debe ser una funcion
 
@@ -16,12 +16,15 @@
 #define ERROR	-1
 #define SUCCESS	1
 
-#define YES	1
+#define YES	1 // @romi was here :)
 #define NO	0
 
 #define WHENCE_BEG	0
 #define WHENCE_CUR	1
 #define WHENCE_END	2
+
+#define MAXLEN 80
+#define BUFFERSIZE 512
 
 struct SECBOOT{
 	char jump[4];
@@ -60,15 +63,12 @@ struct OPENFILES {
 	unsigned short buffindirect[BLOCKSIZE];
 };
 
-// typedef int VDDIR;
+typedef int VDDIR;
 
-// struct vddirent
-// {
-// 	char *d_name;
-// };
-
-// struct vddirent *vdreaddir(VDDIR *dirdesc);
-// VDDIR *vdopendir(char *path);
+struct vddirent
+{
+	char *d_name;
+};
 
 short secboot_en_memoria = 0;  //bandera de sec boot
 struct SECBOOT secBoot;	   // estructura secboot

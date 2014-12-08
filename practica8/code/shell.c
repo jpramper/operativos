@@ -6,9 +6,9 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include "filesystem.h"
-#define MAXLEN 80
-#define BUFFERSIZE 512
+
 void locateend(char *cmd);
 int executecmd(char *cmd);
 
@@ -26,6 +26,7 @@ int main()
 
 		printf("resutl: %d\n", result );
 	} 
+
 }
 void locateend(char *linea)
 {

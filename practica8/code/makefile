@@ -3,3 +3,4 @@ all:
 	gcc -o test_bench/dumpseclog dumpseclog.c
 	gcc -o test_bench/createvd createvd.c
 	gcc -o test_bench/test tester.c
+	gcc -o shell shell.c
