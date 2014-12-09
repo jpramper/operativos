@@ -381,6 +381,15 @@ int vdclose(int fd)
 //* Manejo de directorios
 // *************************************************************
 
+char *getfilename(int inode)
+{
+	if(check_dirraiz()==ERROR) return NULL;
+
+	if(isinodefree(inode)==YES) return NULL;
+
+	return dirRaiz[inode].name;
+}
+
 VDDIR *vdopendir(char *path)
 {
 	int i=0;
